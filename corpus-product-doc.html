@@ -1,0 +1,351 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Corpus — Product Document</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ink:#0B0D12;
+    --ink-2:#12151D;
+    --line:#242833;
+    --text:#E8E6E0;
+    --muted:#8B8E98;
+    --fresh:#3EE6B0;
+    --stale:#E8A33D;
+    --mono:'JetBrains Mono',monospace;
+    --body:'Inter',sans-serif;
+    --display:'Bebas Neue',sans-serif;
+  }
+  *{margin:0;padding:0;box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{background:var(--ink);color:var(--text);font-family:var(--body);font-size:17px;line-height:1.75;-webkit-font-smoothing:antialiased}
+  .wrap{max-width:880px;margin:0 auto;padding:0 32px}
+  a{color:var(--fresh);text-decoration:none}
+
+  /* ---------- hero ---------- */
+  header{position:relative;padding:110px 0 90px;border-bottom:1px solid var(--line);overflow:hidden}
+  .hero-graph{position:absolute;inset:0;opacity:.55;pointer-events:none}
+  .eyebrow{font-family:var(--mono);font-size:12px;letter-spacing:.22em;text-transform:uppercase;color:var(--muted)}
+  h1{font-family:var(--display);font-size:clamp(72px,12vw,148px);line-height:.92;letter-spacing:.01em;margin:18px 0 26px;position:relative}
+  h1 .dot{color:var(--fresh)}
+  .tagline{font-size:21px;color:var(--text);max-width:560px;position:relative}
+  .tagline em{font-style:normal;color:var(--fresh)}
+  .meta-row{display:flex;gap:36px;margin-top:44px;font-family:var(--mono);font-size:12.5px;color:var(--muted);flex-wrap:wrap;position:relative}
+  .meta-row span b{color:var(--text);font-weight:500}
+
+  /* ---------- sections ---------- */
+  section{padding:78px 0;border-bottom:1px solid var(--line)}
+  .sec-label{font-family:var(--mono);font-size:12px;letter-spacing:.22em;text-transform:uppercase;color:var(--muted);margin-bottom:14px}
+  h2{font-family:var(--display);font-size:clamp(38px,5vw,56px);line-height:1;letter-spacing:.015em;margin-bottom:28px}
+  h3{font-size:19px;font-weight:600;margin:34px 0 10px}
+  p{color:#C9C7C1;margin-bottom:18px;max-width:700px}
+  p.lead{font-size:20px;color:var(--text);max-width:720px}
+  .accent{color:var(--fresh)}
+  .warn{color:var(--stale)}
+
+  /* problem cards */
+  .duo{display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-top:34px}
+  @media(max-width:720px){.duo{grid-template-columns:1fr}}
+  .card{background:var(--ink-2);border:1px solid var(--line);border-radius:10px;padding:28px}
+  .card .k{font-family:var(--mono);font-size:12px;letter-spacing:.18em;text-transform:uppercase;color:var(--stale);margin-bottom:12px}
+  .card h4{font-size:17px;font-weight:600;margin-bottom:10px}
+  .card p{font-size:15.5px;margin-bottom:0;color:var(--muted)}
+
+  /* principle strip */
+  .principle{background:var(--ink-2);border:1px solid var(--line);border-left:3px solid var(--fresh);border-radius:0 10px 10px 0;padding:26px 30px;margin:36px 0;max-width:720px}
+  .principle .k{font-family:var(--mono);font-size:11.5px;letter-spacing:.2em;text-transform:uppercase;color:var(--fresh);margin-bottom:8px}
+  .principle p{margin:0;color:var(--text);font-size:16.5px}
+
+  /* components */
+  .comp{display:grid;grid-template-columns:88px 1fr;gap:28px;padding:40px 0;border-top:1px solid var(--line)}
+  .comp:first-of-type{border-top:none;padding-top:10px}
+  .comp-num{font-family:var(--display);font-size:64px;line-height:1;color:var(--line)}
+  .comp h3{margin-top:0;font-size:22px}
+  .comp .sub{font-family:var(--mono);font-size:12.5px;color:var(--fresh);letter-spacing:.08em;margin-bottom:14px;display:block}
+  .comp p{font-size:16px}
+  .comp ul{list-style:none;margin:14px 0 0}
+  .comp li{font-size:15.5px;color:var(--muted);padding:7px 0 7px 22px;position:relative}
+  .comp li::before{content:"→";position:absolute;left:0;color:var(--fresh);font-family:var(--mono)}
+  @media(max-width:720px){.comp{grid-template-columns:1fr;gap:8px}.comp-num{font-size:44px}}
+
+  code{font-family:var(--mono);font-size:.88em;background:var(--ink-2);border:1px solid var(--line);border-radius:5px;padding:2px 7px;color:var(--fresh)}
+
+  /* day in life */
+  .flow{margin-top:36px;border-left:1px solid var(--line);padding-left:0}
+  .step{position:relative;padding:0 0 34px 34px}
+  .step::before{content:"";position:absolute;left:-5px;top:8px;width:9px;height:9px;border-radius:50%;background:var(--fresh)}
+  .step:last-child{padding-bottom:0}
+  .step .t{font-family:var(--mono);font-size:12px;color:var(--muted);letter-spacing:.14em;text-transform:uppercase;margin-bottom:6px}
+  .step p{font-size:16px;margin-bottom:0}
+
+  /* decisions table */
+  .decisions{margin-top:30px;display:grid;gap:14px}
+  .dec{display:grid;grid-template-columns:180px 1fr;gap:22px;padding:20px 24px;background:var(--ink-2);border:1px solid var(--line);border-radius:10px;align-items:start}
+  .dec .what{font-family:var(--mono);font-size:13.5px;color:var(--stale);padding-top:2px}
+  .dec p{font-size:15px;margin:0;color:var(--muted)}
+  @media(max-width:720px){.dec{grid-template-columns:1fr;gap:6px}}
+
+  /* roadmap */
+  .miles{margin-top:34px;display:grid;gap:2px}
+  .mile{display:grid;grid-template-columns:70px 220px 1fr;gap:24px;padding:20px 0;border-top:1px solid var(--line);align-items:baseline}
+  .mile:last-child{border-bottom:1px solid var(--line)}
+  .mile .m{font-family:var(--display);font-size:26px;color:var(--fresh)}
+  .mile .n{font-weight:600;font-size:16px}
+  .mile p{font-size:15px;color:var(--muted);margin:0}
+  @media(max-width:720px){.mile{grid-template-columns:56px 1fr}.mile p{grid-column:1/-1}}
+
+  .later{margin-top:44px}
+  .later h3{margin-top:0}
+  .chips{display:flex;flex-wrap:wrap;gap:10px;margin-top:16px}
+  .chip{font-family:var(--mono);font-size:13px;border:1px solid var(--line);border-radius:100px;padding:8px 18px;color:var(--muted)}
+
+  /* non-goals */
+  .non li{color:var(--muted);font-size:16px;padding:10px 0 10px 26px;position:relative;list-style:none;max-width:700px}
+  .non li::before{content:"✕";position:absolute;left:0;color:var(--stale);font-family:var(--mono);font-size:13px;top:14px}
+  .non li b{color:var(--text);font-weight:600}
+
+  footer{padding:60px 0 80px;font-family:var(--mono);font-size:12.5px;color:var(--muted)}
+  footer .pulse{display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--fresh);margin-right:10px;animation:pp 2.4s ease-in-out infinite}
+  @keyframes pp{0%,100%{opacity:.35}50%{opacity:1}}
+  @media(prefers-reduced-motion:reduce){.pulse,.edge-pulse,.node-breathe{animation:none!important}}
+
+  /* hero svg anim */
+  .edge-pulse{animation:travel 5s linear infinite}
+  @keyframes travel{0%{stroke-dashoffset:220}100%{stroke-dashoffset:-220}}
+  .node-breathe{animation:breathe 3.2s ease-in-out infinite}
+  @keyframes breathe{0%,100%{opacity:.5}50%{opacity:1}}
+</style>
+</head>
+<body>
+
+<header>
+  <svg class="hero-graph" viewBox="0 0 1200 460" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
+    <g stroke="#242833" stroke-width="1" fill="none">
+      <line x1="140" y1="90" x2="330" y2="200"/>
+      <line x1="330" y1="200" x2="560" y2="120"/>
+      <line x1="330" y1="200" x2="470" y2="330"/>
+      <line x1="560" y1="120" x2="820" y2="180"/>
+      <line x1="470" y1="330" x2="820" y2="180"/>
+      <line x1="820" y1="180" x2="1040" y2="90"/>
+      <line x1="820" y1="180" x2="990" y2="330"/>
+      <line x1="470" y1="330" x2="700" y2="400"/>
+    </g>
+    <g stroke="#3EE6B0" stroke-width="1.4" fill="none" opacity=".8">
+      <line class="edge-pulse" x1="330" y1="200" x2="820" y2="180" stroke-dasharray="10 210"/>
+      <line class="edge-pulse" x1="820" y1="180" x2="990" y2="330" stroke-dasharray="10 210" style="animation-delay:1.6s"/>
+    </g>
+    <g fill="#3EE6B0">
+      <circle class="node-breathe" cx="140" cy="90" r="4"/>
+      <circle class="node-breathe" cx="330" cy="200" r="6" style="animation-delay:.4s"/>
+      <circle class="node-breathe" cx="560" cy="120" r="4" style="animation-delay:.9s"/>
+      <circle class="node-breathe" cx="470" cy="330" r="5" style="animation-delay:1.3s"/>
+      <circle class="node-breathe" cx="820" cy="180" r="7" style="animation-delay:.2s"/>
+      <circle class="node-breathe" cx="1040" cy="90" r="4" style="animation-delay:1.7s"/>
+      <circle cx="990" cy="330" r="5" fill="#E8A33D"/>
+      <circle class="node-breathe" cx="700" cy="400" r="4" style="animation-delay:2.1s"/>
+    </g>
+  </svg>
+  <div class="wrap">
+    <div class="eyebrow">Product document · v1</div>
+    <h1>Corpus<span class="dot">.</span></h1>
+    <p class="tagline">A living second representation of your codebase — one that <em>keeps itself current</em>, that you can see, and that your coding agent can think with.</p>
+    <div class="meta-row">
+      <span>Type · <b>Developer tool, personal &amp; internal use</b></span>
+      <span>Form · <b>CLI + MCP server + live graph</b></span>
+      <span>Status · <b>Design locked, pre-build</b></span>
+    </div>
+  </div>
+</header>
+
+<section>
+  <div class="wrap">
+    <div class="sec-label">01 · The problem</div>
+    <h2>Code moves. Understanding doesn't keep up.</h2>
+    <p class="lead">Every project carries a second, invisible artifact: the understanding of how it works. Today that artifact lives in two fragile places — documentation nobody maintains, and the fading memory of whoever wrote the code.</p>
+
+    <div class="duo">
+      <div class="card">
+        <div class="k">Part one · documentation rots</div>
+        <h4>Writing docs is tedious. Keeping them true is worse.</h4>
+        <p>Whether you document as you go or all at the end, it's manual work that competes with building. And it's needed twice over — readable docs for humans, and structured context for AI agents working on the codebase. Both go stale the moment the code changes, and nobody goes back to fix them.</p>
+      </div>
+      <div class="card">
+        <div class="k">Part two · comprehension lags</div>
+        <h4>Keeping up with your own codebase — and your agent — is hard.</h4>
+        <p>As Claude Code works, it changes things faster than you can follow. And when you ask an agent about your project, it explores your files blind, every single session. There's no persistent, always-current picture of the project that humans can navigate visually and agents can query precisely.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <div class="sec-label">02 · The idea</div>
+    <h2>A brain that updates itself.</h2>
+    <p class="lead">Corpus is a second representation of your codebase — documentation, structure, and history — that regenerates from the code itself. You never maintain it. You run one command, and it catches up to reality.</p>
+    <p>It serves two audiences from one source of truth. For you: an Obsidian-style visual map of your project, where every node opens into plain-language docs. For your agent: a set of precise query tools, so it understands your project instantly instead of crawling it blind.</p>
+
+    <div class="principle">
+      <div class="k">Design principle</div>
+      <p>Structure is computed. Meaning is generated. The map of the project — files, folders, connections — is derived mechanically from the code, so it can never drift or hallucinate. Only the explanations are written by AI, in the one place where being wrong is cheap to fix.</p>
+    </div>
+
+    <div class="principle" style="border-left-color:var(--stale)">
+      <div class="k" style="color:var(--stale)">Honesty principle</div>
+      <p>Corpus always tells you what it doesn't know. Anything that changed since the last update is visibly flagged as <span class="warn">stale</span> — in the graph, and to the agent. A corpus that admits its blind spots is one you can trust.</p>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <div class="sec-label">03 · How it works</div>
+    <h2>Three surfaces, one brain.</h2>
+    <p class="lead">Built in this order, because each one stands on the last.</p>
+
+    <div class="comp">
+      <div class="comp-num">1</div>
+      <div>
+        <h3>The Engine</h3>
+        <span class="sub">a CLI — run <code>corpus update</code> whenever you choose</span>
+        <p>The heart of the system. After a feature, after a session, whenever you want — one command. The engine looks at what changed since the last update, re-reads only those parts of the code, and patches exactly the documentation they affect. Out comes an updated set of per-module docs and a fresh map of the project's structure.</p>
+        <ul>
+          <li>Docs exist at two zoom levels: every file gets its own, every folder gets a rollup summary.</li>
+          <li>The map is always derived from the code — imports, connections, structure — never maintained by hand, so it can't go stale.</li>
+          <li>Each doc carries an importance rating, so the interface can foreground what matters and tuck away what doesn't.</li>
+          <li>First version regenerates everything; updating only what changed is the core engineering challenge, and it comes second.</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="comp">
+      <div class="comp-num">2</div>
+      <div>
+        <h3>The Bridge</h3>
+        <span class="sub">an MCP server — Corpus, plugged into Claude Code</span>
+        <p>Corpus becomes a native set of tools inside Claude Code: project overview, per-module docs, symbol relations, recent changes. Instead of grep-crawling your repo every session, the agent asks Corpus and gets precise answers — fewer tool calls, faster work, less guessing.</p>
+        <ul>
+          <li>Creates a self-reinforcing loop: the agent uses Corpus → codes faster → <code>corpus update</code> absorbs the changes → the next session is smarter.</li>
+          <li>No custom chat interface is built. Claude Code <b>is</b> the chat — asking your terminal is asking Corpus.</li>
+          <li>Every query the agent makes is broadcast as an event — which powers the third surface.</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="comp">
+      <div class="comp-num">3</div>
+      <div>
+        <h3>The Window</h3>
+        <span class="sub">a live graph viewer — watch your project, and your agent, think</span>
+        <p>An Obsidian-style force-directed graph of your codebase. Folders are nodes; click to unfold them into files; click any node to read its docs. Important files are prominent, minor ones tuck behind a "show all" — the graph breathes at the level you care about.</p>
+        <ul>
+          <li><b>The live agent monitor:</b> as Claude Code queries Corpus, the nodes it touches light up in real time. You watch the agent navigate your project while it works — a window into its head.</li>
+          <li>Anything changed since the last update glows <span class="warn">amber</span> — stale, and honest about it.</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <div class="sec-label">04 · The experience</div>
+    <h2>A session with Corpus.</h2>
+    <div class="flow">
+      <div class="step">
+        <div class="t">You start work</div>
+        <p>You open Claude Code on your project. Corpus is already connected — the agent greets your first request with real knowledge of the architecture, not a cold crawl of your files.</p>
+      </div>
+      <div class="step">
+        <div class="t">The agent works, you watch</div>
+        <p>On your second screen, the graph is open. As the agent reasons about the auth flow, the auth nodes glow and the path it consults traces across the map. You can see exactly which parts of your project it's thinking with.</p>
+      </div>
+      <div class="step">
+        <div class="t">Code changes, Corpus admits it</div>
+        <p>The agent edits three files. Their nodes flip to amber — Corpus marking, honestly, that its picture of them is now behind reality.</p>
+      </div>
+      <div class="step">
+        <div class="t">One command, caught up</div>
+        <p>You run <code>corpus update</code>. The engine reads the diff, patches the affected docs, refreshes the map. Amber turns back to teal. Corpus is current again — and the next session starts smarter than this one did.</p>
+      </div>
+      <div class="step">
+        <div class="t">Any time later</div>
+        <p>You open the graph just to look — to browse the docs, to remember how a module works, to see the shape of what you've built. Your project, finally visible.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <div class="sec-label">05 · Deliberate omissions</div>
+    <h2>What we chose not to build.</h2>
+    <p class="lead">Every one of these was on the table. Cutting them is what makes the product finishable — and better.</p>
+    <div class="decisions">
+      <div class="dec">
+        <div class="what">Vector search / RAG</div>
+        <p>Wrong retrieval model for code. Codebases have exact structure — imports, calls, symbols — and Corpus uses it directly. Similarity search would add a fourth, fuzziest copy of the codebase that needs its own syncing. Precision beats vibes.</p>
+      </div>
+      <div class="dec">
+        <div class="what">A custom chat UI</div>
+        <p>Claude Code already is a world-class chat interface with Corpus plugged in. Building a second one would be weeks of redundant work producing a worse version.</p>
+      </div>
+      <div class="dec">
+        <div class="what">Auto-triggering watchers</div>
+        <p>Updating on every keystroke or commit sounds magical and behaves annoyingly. A deliberate command keeps the developer in control; automation can come later as a convenience, not a foundation.</p>
+      </div>
+      <div class="dec">
+        <div class="what">AI-decided structure</div>
+        <p>The LLM never chooses what counts as a module or where boundaries sit — that judgment drifts between runs and corrupts history. AI writes the meaning; deterministic rules build the structure. Always.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <div class="sec-label">06 · Roadmap</div>
+    <h2>Five milestones. Each one demoable.</h2>
+    <div class="miles">
+      <div class="mile"><div class="m">M1</div><div class="n">The static brain</div><p>Point the CLI at a repo → per-file docs, folder rollups, and the structural map. Full regeneration each run. Ugly but real.</p></div>
+      <div class="mile"><div class="m">M2</div><div class="n">Incremental updates</div><p>Only what changed gets re-documented — including docs affected indirectly through the dependency map. The hardest engineering in the project, and the reason updates stay fast and cheap.</p></div>
+      <div class="mile"><div class="m">M3</div><div class="n">The bridge</div><p>The MCP server connects Corpus to Claude Code. Then a week of daily use — dogfooding will reshape the doc format better than any planning.</p></div>
+      <div class="mile"><div class="m">M4</div><div class="n">The window, static</div><p>The graph renders. Folders unfold, nodes open docs, importance shapes the view.</p></div>
+      <div class="mile"><div class="m">M5</div><div class="n">The window, alive</div><p>The live wire — agent queries stream to the graph, nodes light up as it thinks. The demo.</p></div>
+    </div>
+
+    <div class="later">
+      <h3>After the core</h3>
+      <div class="chips">
+        <span class="chip">Per-module changelog — "what changed in the scraper this month"</span>
+        <span class="chip">Explain this diff — plain-English summary of uncommitted work</span>
+        <span class="chip">Health overlays — churn, last-touched</span>
+        <span class="chip">Onboarding tour mode</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <div class="sec-label">07 · Honest framing</div>
+    <h2>What this is, and isn't.</h2>
+    <ul class="non">
+      <li><b>Not a novel category.</b> Comparable open-source tools exist and thrive. This is built for learning, for personal use, and for internal use — with reference implementations studied, not ignored. The live agent monitor is the one surface where this goes further than what's out there.</li>
+      <li><b>Not a cure for not reading code.</b> Corpus makes understanding cheap; it can't make it happen. A summary is a door to comprehension, not a substitute for walking through it.</li>
+      <li><b>Not a production service.</b> One developer, their repos, their machine. Free-tier AI, local files, no accounts, no cloud.</li>
+    </ul>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap">
+    <span class="pulse"></span>Corpus · product document · design locked — next artifact is the developer document
+  </div>
+</footer>
+
+</body>
+</html>

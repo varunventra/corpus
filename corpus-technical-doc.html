@@ -1,0 +1,333 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Corpus — Technical Design Document</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ink:#0B0D12; --ink-2:#12151D; --line:#242833;
+    --text:#E8E6E0; --muted:#8B8E98;
+    --fresh:#3EE6B0; --stale:#E8A33D; --veto:#7FA8FF;
+    --mono:'JetBrains Mono',monospace; --body:'Inter',sans-serif; --display:'Bebas Neue',sans-serif;
+  }
+  *{margin:0;padding:0;box-sizing:border-box}
+  body{background:var(--ink);color:var(--text);font-family:var(--body);font-size:16.5px;line-height:1.7;-webkit-font-smoothing:antialiased}
+  .wrap{max-width:920px;margin:0 auto;padding:0 32px}
+  header{padding:90px 0 60px;border-bottom:1px solid var(--line)}
+  .eyebrow{font-family:var(--mono);font-size:12px;letter-spacing:.22em;text-transform:uppercase;color:var(--muted)}
+  h1{font-family:var(--display);font-size:clamp(56px,9vw,104px);line-height:.95;margin:16px 0 20px}
+  h1 .dot{color:var(--fresh)}
+  .tagline{font-size:18px;color:var(--muted);max-width:640px}
+  .meta-row{display:flex;gap:32px;margin-top:36px;font-family:var(--mono);font-size:12.5px;color:var(--muted);flex-wrap:wrap}
+  .meta-row span b{color:var(--text);font-weight:500}
+
+  section{padding:64px 0;border-bottom:1px solid var(--line)}
+  .sec-label{font-family:var(--mono);font-size:12px;letter-spacing:.22em;text-transform:uppercase;color:var(--muted);margin-bottom:12px}
+  h2{font-family:var(--display);font-size:clamp(34px,4.5vw,48px);line-height:1;margin-bottom:24px}
+  h3{font-size:18px;font-weight:600;margin:32px 0 10px}
+  p{color:#C9C7C1;margin-bottom:16px;max-width:760px}
+  p.lead{font-size:19px;color:var(--text)}
+  .warn{color:var(--stale)}
+
+  code{font-family:var(--mono);font-size:.87em;background:var(--ink-2);border:1px solid var(--line);border-radius:5px;padding:2px 7px;color:var(--fresh)}
+  pre{background:var(--ink-2);border:1px solid var(--line);border-radius:10px;padding:22px 26px;overflow-x:auto;margin:20px 0;font-family:var(--mono);font-size:13.5px;line-height:1.65;color:#C9C7C1}
+  pre .c{color:var(--muted)} pre .k{color:var(--fresh)} pre .a{color:var(--stale)}
+
+  .decision{background:var(--ink-2);border:1px solid var(--line);border-left:3px solid var(--veto);border-radius:0 10px 10px 0;padding:20px 26px;margin:24px 0;max-width:780px}
+  .decision .k{font-family:var(--mono);font-size:11px;letter-spacing:.2em;text-transform:uppercase;color:var(--veto);margin-bottom:6px}
+  .decision p{margin:0;font-size:15.5px;color:var(--text)}
+
+  table{width:100%;border-collapse:collapse;margin:22px 0;font-size:14.5px}
+  th{font-family:var(--mono);font-size:11.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);text-align:left;padding:10px 14px;border-bottom:1px solid var(--line)}
+  td{padding:12px 14px;border-bottom:1px solid var(--line);color:#C9C7C1;vertical-align:top}
+  td:first-child{font-family:var(--mono);font-size:13px;color:var(--text);white-space:nowrap}
+  td .free{font-family:var(--mono);font-size:11px;color:var(--fresh);border:1px solid var(--line);border-radius:100px;padding:2px 10px;white-space:nowrap}
+
+  .steps{counter-reset:s;margin:24px 0;max-width:780px}
+  .stp{counter-increment:s;position:relative;padding:16px 0 16px 58px;border-top:1px solid var(--line)}
+  .stp::before{content:counter(s);position:absolute;left:0;top:14px;font-family:var(--display);font-size:28px;color:var(--fresh)}
+  .stp h4{font-size:15.5px;font-weight:600;margin-bottom:4px}
+  .stp p{font-size:14.5px;margin:0;color:var(--muted)}
+
+  ul.plain{list-style:none;max-width:760px}
+  ul.plain li{padding:8px 0 8px 24px;position:relative;color:#C9C7C1;font-size:15.5px}
+  ul.plain li::before{content:"→";position:absolute;left:0;color:var(--fresh);font-family:var(--mono)}
+
+  .risk{display:grid;grid-template-columns:200px 1fr;gap:20px;padding:18px 22px;background:var(--ink-2);border:1px solid var(--line);border-radius:10px;margin-bottom:12px;align-items:start}
+  .risk .what{font-family:var(--mono);font-size:13px;color:var(--stale);padding-top:2px}
+  .risk p{font-size:14.5px;margin:0;color:var(--muted)}
+  @media(max-width:720px){.risk{grid-template-columns:1fr;gap:6px}}
+
+  .mile{display:grid;grid-template-columns:64px 200px 1fr;gap:22px;padding:18px 0;border-top:1px solid var(--line);align-items:baseline}
+  .mile:last-of-type{border-bottom:1px solid var(--line)}
+  .mile .m{font-family:var(--display);font-size:24px;color:var(--fresh)}
+  .mile .n{font-weight:600;font-size:15.5px}
+  .mile p{font-size:14.5px;color:var(--muted);margin:0}
+  .mile .ac{font-family:var(--mono);font-size:12.5px;color:var(--fresh);display:block;margin-top:6px}
+  @media(max-width:720px){.mile{grid-template-columns:50px 1fr}.mile p{grid-column:1/-1}}
+
+  footer{padding:56px 0 72px;font-family:var(--mono);font-size:12.5px;color:var(--muted)}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="wrap">
+    <div class="eyebrow">Technical design document · v1 · companion to the product document</div>
+    <h1>Corpus<span class="dot">.</span> <span style="font-size:.45em;color:var(--muted)">/ engineering</span></h1>
+    <p class="tagline">How Corpus is built: data model, pipeline, protocols, and stack. Every decision that was open in conversation is resolved here as a concrete proposal — blocks marked <span style="color:var(--veto)">DECISION</span> are vetoable before build.</p>
+    <div class="meta-row">
+      <span>Constraint · <b>100% free stack — every dependency FOSS or free tier</b></span>
+      <span>Runtime · <b>Local only, no cloud, no accounts</b></span>
+      <span>Storage · <b>Plain files. No database.</b></span>
+    </div>
+  </div>
+</header>
+
+<section>
+  <div class="wrap">
+    <div class="sec-label">01 · Stack</div>
+    <h2>Every piece, and why it's free.</h2>
+    <table>
+      <tr><th>Component</th><th>Choice</th><th>Why</th><th>Cost</th></tr>
+      <tr><td>Engine + CLI</td><td>Python 3.11+, Click</td><td>Best tree-sitter bindings; primary language of the developer; Click gives clean subcommands (<code>corpus init</code>, <code>corpus update</code>, <code>corpus explain</code>)</td><td><span class="free">FOSS</span></td></tr>
+      <tr><td>Parsing</td><td>tree-sitter + language grammars</td><td>Local AST extraction — symbols, imports, calls — deterministic, milliseconds per file, ~36 languages available. Zero LLM calls for structure</td><td><span class="free">MIT</span></td></tr>
+      <tr><td>Git access</td><td>git CLI via subprocess</td><td>Diffs, rename detection (<code>git diff -M</code>), status for staleness. No library dependency — git itself is the API</td><td><span class="free">FOSS</span></td></tr>
+      <tr><td>LLM</td><td>Gemini 2.5 Flash (AI Studio free tier)</td><td>~1,500 req/day, 1M-token context — fits whole modules in one call. Behind a provider-agnostic wrapper</td><td><span class="free">FREE TIER</span></td></tr>
+      <tr><td>LLM fallback</td><td>Groq (Llama 3.3 70B free tier)</td><td>Automatic retry lane when Gemini 429s. Small per-file patches only — tight TPM limits</td><td><span class="free">FREE TIER</span></td></tr>
+      <tr><td>MCP server</td><td>FastMCP (Python)</td><td>Official-pattern MCP SDK; tools defined as decorated Python functions; stdio transport into Claude Code</td><td><span class="free">MIT</span></td></tr>
+      <tr><td>Event bridge</td><td>FastAPI + websockets, uvicorn</td><td>Tiny sidecar HTTP/WS server for the live monitor; already in the developer's stack</td><td><span class="free">FOSS</span></td></tr>
+      <tr><td>Frontend</td><td>React 18 + Vite</td><td>Developer's stack; Vite dev server is instant; static build, no hosting needed — runs on localhost</td><td><span class="free">FOSS</span></td></tr>
+      <tr><td>Graph render</td><td>react-force-graph (d3-force under the hood)</td><td>Force-directed layout, node click/hover/zoom out of the box, canvas-based so 500+ nodes stay smooth</td><td><span class="free">MIT</span></td></tr>
+      <tr><td>Storage</td><td>Plain markdown + JSON in <code>.corpus/</code></td><td>Human-readable, git-diffable, greppable, zero infra. A database would add setup cost and remove inspectability</td><td><span class="free">FREE</span></td></tr>
+    </table>
+    <div class="decision">
+      <div class="k">Decision · vetoable</div>
+      <p>Python for engine + MCP server, React for frontend, no database anywhere. Rationale: tree-sitter and FastMCP are strongest in Python; plain files make every layer of Corpus inspectable with <code>cat</code> and debuggable without tooling.</p>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <div class="sec-label">02 · Data layout</div>
+    <h2>Everything lives in <span style="font-family:var(--mono);font-size:.55em;color:var(--fresh)">.corpus/</span></h2>
+    <p>One hidden directory at the repo root. Committed to git (optional but recommended — teammates and CI get the brain for free).</p>
+<pre>
+.corpus/
+├── graph.json          <span class="c"># nodes, edges, hierarchy — the map</span>
+├── state.json          <span class="c"># last update: commit hash, timestamp, file hashes</span>
+├── docs/
+│   ├── _root.md        <span class="c"># project-level overview (rollup of top dirs)</span>
+│   ├── api/
+│   │   ├── _dir.md     <span class="c"># rollup doc for api/</span>
+│   │   ├── auth.py.md  <span class="c"># file doc — mirrors repo structure</span>
+│   │   └── routes.py.md
+│   └── frontend/…
+├── changelog/
+│   └── n_04f2.jsonl    <span class="c"># per-node history, append-only (post-core)</span>
+└── corpus.yml          <span class="c"># config: ignore rules, collapse pins, provider</span>
+</pre>
+    <ul class="plain">
+      <li><code>docs/</code> mirrors the repo tree exactly — finding a file's doc requires no lookup table.</li>
+      <li><code>state.json</code> stores a content hash per tracked file at last update — this is what staleness and incrementality diff against.</li>
+      <li>Ignore rules: <code>.gitignore</code> is respected automatically, plus a <code>.corpusignore</code>-style list in <code>corpus.yml</code> (default: lockfiles, migrations, build output, vendored code, binary assets).</li>
+    </ul>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <div class="sec-label">03 · Graph schema &amp; node identity</div>
+    <h2>IDs that survive renames.</h2>
+    <p class="lead">The problem: if node IDs are file paths, moving <code>scraper.py</code> to <code>ingest/scraper.py</code> destroys its history — the system sees a deletion and a creation. Identity must be decoupled from location.</p>
+<pre>
+<span class="c">// graph.json (abridged)</span>
+{
+  "version": 1,
+  "nodes": [
+    {
+      "id": "n_04f2",                    <span class="c">// stable random ID — never changes</span>
+      "path": "api/auth.py",             <span class="c">// current location — mutable</span>
+      "kind": "file",                    <span class="c">// file | dir</span>
+      "parent": "n_00a1",
+      "lang": "python",
+      "loc": 214,
+      "symbols": ["hash_pw", "verify", "AuthMiddleware"],
+      "importance": 4,                   <span class="c">// LLM rating from doc pass, 1–5</span>
+      "score": 0.81,                     <span class="c">// computed: fan-in + centrality + churn</span>
+      "stale": false,
+      "doc": "docs/api/auth.py.md"
+    },
+    { "id": "n_00a1", "path": "api", "kind": "dir",
+      "parent": "n_root", "collapsed": false, "doc": "docs/api/_dir.md" }
+  ],
+  "edges": [
+    { "from": "n_04f2", "to": "n_07c9", "type": "imports" }
+  ]
+}
+</pre>
+    <h3>Rename survival</h3>
+    <div class="steps">
+      <div class="stp"><h4>Git detects the rename</h4><p><code>git diff -M --name-status</code> between last-update commit and HEAD reports <code>R097 scraper.py → ingest/scraper.py</code> (97% content similarity).</p></div>
+      <div class="stp"><h4>Engine updates the path, keeps the ID</h4><p><code>n_04f2</code>'s <code>path</code> field changes; ID, doc history, changelog, importance all persist. The doc file moves to mirror the new path.</p></div>
+      <div class="stp"><h4>Fallback for git-invisible moves</h4><p>If a file was moved outside git's similarity threshold, content-hash matching in <code>state.json</code> catches identical files at new paths. A genuinely rewritten-and-moved file is, honestly, a new node — correct behavior.</p></div>
+    </div>
+    <div class="decision">
+      <div class="k">Decision · vetoable</div>
+      <p>Node IDs are short random strings assigned at first sight, never derived from paths. Edges reference IDs, not paths. The frontend and MCP tools accept paths for convenience and resolve them to IDs internally.</p>
+    </div>
+    <h3>Module rules (locked in conversation, restated)</h3>
+    <ul class="plain">
+      <li>Files are the atoms: docs, staleness, history, diff-mapping — all file-level, everywhere, no exceptions.</li>
+      <li>Directories are the view: rollup docs generated from child docs, shown collapsed or expanded.</li>
+      <li>Collapse heuristic is deterministic: <code>collapse if file_count &gt; 10 and median_loc &lt; 80</code> (tunable in <code>corpus.yml</code>, per-directory pins override).</li>
+      <li>Display rank inside an expanded dir = computed score (fan-in, hub centrality, size, churn) adjusted by the LLM's 1–5 importance rating. Low scorers sit behind "show all". Wrong ranking is harmless by design.</li>
+      <li>The LLM never defines structure. Structure is computed; meaning is generated.</li>
+    </ul>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <div class="sec-label">04 · The update pipeline</div>
+    <h2>What <span style="font-family:var(--mono);font-size:.5em;color:var(--fresh)">corpus update</span> actually does.</h2>
+    <div class="steps">
+      <div class="stp"><h4>Snapshot diff</h4><p>Compare working tree against <code>state.json</code>: git diff (with <code>-M</code> rename detection) plus content hashes. Output: sets of added / modified / renamed / deleted files.</p></div>
+      <div class="stp"><h4>Structural pass — deterministic, free</h4><p>tree-sitter re-parses changed files → symbols, imports, calls. Graph nodes and edges updated. Deleted files' nodes removed; new files get fresh IDs.</p></div>
+      <div class="stp"><h4>Invalidation — compute the blast radius</h4><p>Docs to regenerate = changed files <span style="color:var(--fresh)">∪</span> their direct importers whose contract-facing symbols changed (see §05). Ancestor directory rollups of all affected files are queued for refresh.</p></div>
+      <div class="stp"><h4>Semantic pass — the only LLM step</h4><p>For each invalidated file: prompt = file source + its old doc + the diff + one-hop neighbor summaries. Output = new doc (structured markdown) + importance rating + optional coupling notes. Calls batched, budget-capped.</p></div>
+      <div class="stp"><h4>Rollups &amp; commit state</h4><p>Affected <code>_dir.md</code> rollups regenerate from child docs (cheap LLM summarization). <code>state.json</code> updated with new hashes + commit ref. Staleness flags clear.</p></div>
+    </div>
+    <div class="decision">
+      <div class="k">Decision · vetoable</div>
+      <p>Performance budget: an update after a typical session (≤15 changed files) must complete in under 60 seconds and fit inside the free tier's daily quota with room for 10+ updates/day. This budget is a design constraint, not an aspiration — it's why incrementality (M2) is core, not optimization.</p>
+    </div>
+    <h3>M1 simplification</h3>
+    <p>M1 skips steps 1 and 3 — full regeneration of everything, every run. Correct, slow, quota-hungry, fine. The pipeline is architected as above from day one so M2 slots into an existing shape rather than forcing a rewrite.</p>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <div class="sec-label">05 · Invalidation rule</div>
+    <h2>When does a change over <em>here</em> stale a doc over <em>there</em>?</h2>
+    <p class="lead">The subtle failure: change <code>auth.py</code>'s function signature, and <code>api.py</code>'s doc — which describes how it calls auth — is now wrong, with zero diff lines in <code>api.py</code>.</p>
+    <p>Corpus computes blast radius through the graph it already has:</p>
+    <ul class="plain">
+      <li><b>Always re-doc:</b> every file with actual diff lines.</li>
+      <li><b>Also re-doc:</b> direct importers of a changed file, <em>if</em> the change touched exported/public symbols (tree-sitter tells us which symbols changed; the edge list tells us who imports them).</li>
+      <li><b>Never cascade further than one hop.</b> Transitive invalidation (importers of importers) balloons cost for marginal accuracy. Second-hop drift is caught the next time those files change, and the staleness system means Corpus never claims false freshness anyway.</li>
+      <li><b>Directory rollups:</b> refresh every ancestor of any re-doc'd file, root last.</li>
+    </ul>
+    <div class="decision">
+      <div class="k">Decision · vetoable</div>
+      <p>One-hop, symbol-gated invalidation. This is the accuracy/cost tradeoff at the heart of M2 — deeper cascades are a config flag later if drift proves annoying in practice, not a v1 default.</p>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <div class="sec-label">06 · Staleness mechanics</div>
+    <h2>Amber, precisely defined.</h2>
+    <ul class="plain">
+      <li>A node is <span class="warn">stale</span> when its file's current content hash ≠ the hash recorded in <code>state.json</code> at last update. Computed against the <b>working tree</b> — uncommitted edits count, because mid-session is exactly when it matters.</li>
+      <li>A directory is stale if any descendant is stale.</li>
+      <li>The MCP server checks staleness at query time and attaches it to every response: <code>"stale": true, "changed_since_doc": "+42/−7 lines"</code>. The agent knows to trust the doc less and read the file if precision matters. Corpus never silently serves a stale doc as fresh.</li>
+      <li>The frontend renders stale nodes amber; the file-watcher (a cheap mtime poll, not inotify complexity) flips them live as edits happen.</li>
+    </ul>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <div class="sec-label">07 · MCP tool contract</div>
+    <h2>Six tools. That's the whole bridge.</h2>
+    <table>
+      <tr><th>Tool</th><th>Input</th><th>Returns</th></tr>
+      <tr><td>corpus_overview()</td><td>—</td><td>Project rollup doc + top-level directory summaries + graph stats. The agent's first call every session.</td></tr>
+      <tr><td>corpus_doc(path)</td><td>file or dir path</td><td>The doc, plus staleness flag and symbol list. Dir paths return the rollup.</td></tr>
+      <tr><td>corpus_relations(path)</td><td>file path</td><td>Importers, imports, and shared-symbol edges — the node's neighborhood.</td></tr>
+      <tr><td>corpus_find(query)</td><td>keyword(s)</td><td>Nodes matching by symbol name, path, or doc text (plain text search — grep-grade, deliberately not semantic).</td></tr>
+      <tr><td>corpus_changes(since?)</td><td>optional ref/date</td><td>What's changed: stale files now; changelog entries once M6+ ships.</td></tr>
+      <tr><td>corpus_stale()</td><td>—</td><td>All currently stale nodes — lets the agent (or a hook) suggest running <code>corpus update</code>.</td></tr>
+    </table>
+    <p>Every tool call also emits a fire-and-forget event to the event bridge: <code>{tool, path→node_id, ts}</code>. If no frontend is listening, events drop silently — the bridge is never load-bearing for the agent.</p>
+    <div class="decision">
+      <div class="k">Decision · vetoable</div>
+      <p>Six tools, no more. Restraint is a feature: the developer's own internship finding (13 tools → 1 cut prompt tokens 76%) applies here — a fat tool list taxes every single agent prompt. New tools must displace an existing one or prove they can't be an argument on an existing one.</p>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <div class="sec-label">08 · Live event protocol</div>
+    <h2>The wire behind the window.</h2>
+    <p>The MCP server (stdio, talking to Claude Code) POSTs events to a tiny local sidecar (FastAPI, <code>localhost:7077</code>), which fans them out over websocket to any open frontend. Two processes because MCP's stdio lifecycle is owned by Claude Code — the sidecar outlives sessions and serves the static frontend build too.</p>
+<pre>
+<span class="c">// websocket frames, sidecar → frontend</span>
+{ "ev": "query",  "node": "n_04f2", "tool": "corpus_doc", "ts": 1721... }
+{ "ev": "stale",  "node": "n_04f2", "on": true }
+{ "ev": "graph",  "reason": "update_complete" }   <span class="c">// frontend refetches graph.json</span>
+</pre>
+    <ul class="plain">
+      <li><code>query</code> → node pulses teal for ~2s; collapsed ancestors glow so activity is visible at any zoom.</li>
+      <li><code>stale</code> → node flips amber / back.</li>
+      <li><code>graph</code> → soft reload of the map after <code>corpus update</code> finishes.</li>
+      <li>No buffering, no replay, no auth — localhost-only, ephemeral by design. If nobody's watching, nothing is stored.</li>
+    </ul>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <div class="sec-label">09 · LLM layer</div>
+    <h2>One wrapper, two providers, hard budgets.</h2>
+    <ul class="plain">
+      <li>Single <code>llm.generate(prompt, max_tokens)</code> wrapper; provider set in <code>corpus.yml</code>. Gemini 2.5 Flash primary; on 429, retry via Groq for small patches. Swapping providers is a config edit, never a refactor — free tiers change monthly and the architecture assumes it.</li>
+      <li>Doc prompts demand structured output: purpose (2–3 sentences), key symbols with one-liners, connections, gotchas, <code>importance: 1–5</code>. Parsed, validated, rejected-and-retried once on malformed output.</li>
+      <li>Every doc claim about a symbol must name the symbol it describes — cheap citation discipline that makes hallucinated claims spot-checkable and keeps the doc greppable.</li>
+      <li>Hard caps in config: max files per update, max tokens per call, max calls per day. Hitting a cap degrades gracefully: remaining files stay amber rather than the update failing.</li>
+      <li><b class="warn">Privacy rule:</b> free-tier prompts may be used for model training. Personal repos: fine. Internship/company code: requires explicit clearance or a paid/local provider first. This is a config-level allowlist, not a memory-level promise.</li>
+    </ul>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <div class="sec-label">10 · Milestones, now with acceptance criteria</div>
+    <h2>Done means demonstrable.</h2>
+    <div class="mile"><div class="m">M1</div><div class="n">Static brain</div><p><code>corpus init</code> on a real repo produces graph.json + full docs tree.<span class="ac">✓ when: every non-ignored file has a doc; graph.json validates; run completes on a ~50-file repo within free-tier quota.</span></p></div>
+    <div class="mile"><div class="m">M2</div><div class="n">Incremental updates</div><p>Diff → invalidation → patch. The hard one.<span class="ac">✓ when: editing 3 files re-docs only those + gated importers + rollups; a rename preserves node ID and history; update ≤60s.</span></p></div>
+    <div class="mile"><div class="m">M3</div><div class="n">Bridge + dogfood</div><p>FastMCP server, six tools, wired into Claude Code. Then a week of real use.<span class="ac">✓ when: a fresh Claude Code session answers an architecture question via corpus tools without reading raw files; doc format revised from dogfood notes.</span></p></div>
+    <div class="mile"><div class="m">M4</div><div class="n">Static window</div><p>React graph: collapse/expand, click-to-doc, importance-ranked reveal, amber staleness.<span class="ac">✓ when: a 200-node repo renders smoothly and the graph is legible at default zoom.</span></p></div>
+    <div class="mile"><div class="m">M5</div><div class="n">Live wire</div><p>Sidecar + websocket + pulse rendering.<span class="ac">✓ when: asking Claude Code a question makes the consulted nodes visibly light up in real time. The demo.</span></p></div>
+    <p style="margin-top:28px">Post-core, in order of cheapness: per-node changelog (diffs already flow through the pipeline), <code>corpus explain</code> for uncommitted diffs, health overlays, tour mode.</p>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <div class="sec-label">11 · Known risks</div>
+    <h2>Where this can go wrong.</h2>
+    <div class="risk"><div class="what">Doc hallucination</div><p>LLM docs served to the agent as truth can poison its work. Mitigations: symbol-citation discipline (§09), staleness honesty (§06), and dogfooding week explicitly hunting for confident-but-wrong claims.</p></div>
+    <div class="risk"><div class="what">Free-tier volatility</div><p>Quotas get cut without notice — Gemini's were slashed once already. Mitigation: provider wrapper + Groq lane + hard local budgets. Worst case: updates get slower, never broken.</p></div>
+    <div class="risk"><div class="what">M2 complexity spiral</div><p>Symbol-level change detection can rabbit-hole. Guardrail: if symbol-gating proves hard, fall back to "re-doc all direct importers" — costlier but correct — and ship.</p></div>
+    <div class="risk"><div class="what">Graph hairball at scale</div><p>Force layouts degrade past ~500 visible nodes. Mitigation: collapse-by-default heuristic + importance-gated reveal already cap visible nodes; edges render on hover/selection only above a threshold.</p></div>
+    <div class="risk"><div class="what">Scope creep</div><p>The project's owner has a documented additive-planning pattern. Guardrail: any new component idea goes to LATER.md; the six-tool cap and five milestones are the contract.</p></div>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap">
+    Corpus · technical design v1 · all DECISION blocks open for veto until M1 starts — after that, changes cost code
+  </div>
+</footer>
+
+</body>
+</html>
