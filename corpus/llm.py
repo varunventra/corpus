@@ -4,9 +4,14 @@ from __future__ import annotations
 
 import os
 import re
+import time
 import warnings
 
 import requests
+
+# Gemini free tier: 15 requests/minute. Enforce 4.5s minimum gap between calls.
+_GEMINI_MIN_INTERVAL = 4.5
+_last_gemini_call: float = 0.0
 
 SYSTEM_PROMPT = """\
 You are a senior software engineer writing internal documentation for a codebase.
@@ -38,8 +43,15 @@ class LLMError(Exception):
 
 
 def _is_malformed(text: str) -> bool:
-    """Return True if the response is missing required structure."""
-    return "## Purpose" not in text or _IMPORTANCE_RE.search(text) is None
+    """Return True if the response is missing required section headings.
+
+    Checks only structural completeness (presence of the five H2 headings).
+    The Rating: N/5 line in ## Importance is desirable but not structural —
+    a missing rating simply yields importance=None from extract_importance(),
+    which is handled gracefully by callers.
+    """
+    required = ["## Purpose", "## Symbols", "## Connections", "## Gotchas", "## Importance"]
+    return not all(heading in text for heading in required)
 
 
 def _call_gemini(
@@ -49,6 +61,12 @@ def _call_gemini(
     Call Gemini. Returns (response_text, http_status).
     response_text is None on non-200 responses.
     """
+    global _last_gemini_call
+    elapsed = time.time() - _last_gemini_call
+    if elapsed < _GEMINI_MIN_INTERVAL:
+        time.sleep(_GEMINI_MIN_INTERVAL - elapsed)
+    _last_gemini_call = time.time()
+
     api_key = os.environ.get("GEMINI_API_KEY", "")
     if not api_key:
         return None, None
@@ -115,11 +133,11 @@ def generate(prompt: str, max_tokens: int, config: dict | None = None) -> str:
     Generate a doc string using Gemini (primary), falling back to Groq on 429.
 
     Model names are read from config keys 'gemini_model' and 'groq_model'.
-    Retries once on malformed response (missing ## Purpose or no Rating: N/5).
+    Retries once on malformed response (missing required section headings).
     Raises LLMError only when both providers fail or both responses are malformed.
     """
     cfg = config or {}
-    gemini_model: str = cfg.get("gemini_model", "gemini-2.5-flash")
+    gemini_model: str = cfg.get("gemini_model", "gemini-flash-lite-latest")
     groq_model: str = cfg.get("groq_model", "llama-3.3-70b-versatile")
 
     gemini_key = os.environ.get("GEMINI_API_KEY", "")

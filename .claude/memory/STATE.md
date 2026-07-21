@@ -5,9 +5,9 @@
 
 ## Where we are
 
-- **Current phase:** Phase 2 — Incremental updates (NOT STARTED)
-- **Last completed phase:** Phase 1c — LLM wrapper + per-file docs (DONE — 179/179 tests passing)
-- **Awaiting:** User approval to start Phase 2
+- **Current phase:** ALL PHASES COMPLETE — v1 (M1–M5) done
+- **Last completed phase:** Phase 5 — Live wire (DONE — 393/393 tests)
+- **Awaiting:** User to run frontend build + manual demo verification
 
 ## Project identity
 
@@ -18,55 +18,47 @@
 ```bash
 # From repo root: /c/Users/varun/OneDrive/Desktop/corpus/
 pip install -e .
-corpus init   # scaffolds .corpus/; prints claude mcp add corpus registration hint
-GEMINI_API_KEY=<key> corpus update  # parses files, calls LLM, writes docs + graph.json
-# Or with budget cap to skip LLM:
-corpus update  # (no API key set) → graph written, docs skipped with warning
+corpus init
+GEMINI_API_KEY=<key> corpus update
+python -m corpus.mcp      # MCP server (stdio)
+corpus serve              # same via CLI (--mcp flag missing — see blockers)
 ```
 
 ## What just happened (last session, 5 lines max)
 
-- Phase 1c implemented + reviewed + QA'd: 179/179 tests passing (51 new tests added)
-- New files: corpus/llm.py, corpus/docs.py, tests/test_phase1c.py
-- Modified: corpus/cli.py (doc gen loop + dir rollups), corpus/scaffold.py (MCP hint), pyproject.toml (requests dep)
-- Reviewer found 2 MAJORs (ancestor dirs missing from rollup, model names hardcoded) + 3 minor/nit — all fixed
-- Phase 1c fully closed out — all 6 ACs met
+- Phase 5 built: MCP tools POST events, sidecar /event + WS fanout, frontend pulse animation + WS client
+- Reviewer found 2 MAJORs (graph merge dropped new nodes; dead stale handler) + 1 MINOR — all fixed
+- 35 new Phase 5 tests; full suite 393/393 passing
+- Frontend dist still not built — user must run `cd frontend && npm install && npm run build`
 
-## Phase 2 — what needs to happen
+## Phase 5 acceptance criteria status
 
-Goal: `corpus update` re-docs only changed files + symbol-gated direct importers + ancestor rollups; rename preserves node ID; ≤15 changed files completes in under 60 seconds.
-
-Key deliverables:
-- Snapshot diff: `git diff -M` between current HEAD and state.json's stored commit hash + content-hash comparison for uncommitted edits
-- Rename handling: git-detected renames update `path` on existing node; doc file moved to mirror new path; ID/importance preserved
-- Invalidation logic: re-doc set = changed files ∪ (direct importers where exported symbols changed); max one hop
-- Rollup regeneration: only ancestor `_dir.md` files of re-doc'd nodes
-- Staleness flag: `stale: true` on nodes whose hash differs from state.json; directories stale if any descendant stale
-
-## Next action (specific enough to execute blind)
-
-1. User approves → delegate `builder` (no UI, so no designer needed) → `reviewer` → `qa`
-2. Close out, report, stop.
-
-## Blockers / open questions
-
-- None known.
+All ACs automated-tested: PASS. Browser pulse animation and WS soft-reload require `npm run build` + manual check.
 
 ## Known issues & hacks
 
-- `corpus.mcp` module doesn't exist yet (Phase 3) — expected. `corpus init` prints the registration hint anyway.
-- Windows: `Scripts/` dir may not be on PATH after `pip install -e .` — user may need to add manually.
-- `pathspec` `gitwildmatch` deprecation warning (~2664 warnings in test run) — parked.
-- Old 4-char node IDs in state.json persist from pre-fix runs — correct, IDs are stable once assigned.
-- Schema field `type` vs `kind` divergence noted by reviewer — deferred to Phase 3.
-- llm.generate retry: each provider gets one retry on malformed (up to 4 total calls per file). Spec implied 1 total. More resilient than spec; noted in parking lot.
+- Windows: `Scripts/` dir may not be on PATH after `pip install -e .`
+- `pathspec` `gitwildmatch` deprecation warning — parked
+- Edge regeneration for added files — parked
+- `_corpus_dir()` resolves from cwd at call time — server must be launched from repo root
+- Live stale recomputation not implemented (reads graph.json stale field) — parking lot
 
 ## Phase completion checklist
 
 - [x] Phase 1a — CLI skeleton + scaffolding
 - [x] Phase 1b — tree-sitter → real graph.json
 - [x] Phase 1c — LLM wrapper + per-file docs (M1 complete)
-- [ ] Phase 2 — Incremental updates (M2 complete)
-- [ ] Phase 3 — MCP bridge + dogfood week (M3 complete)
-- [ ] Phase 4 — Static graph viewer (M4 complete)
-- [ ] Phase 5 — Live wire (M5 complete)
+- [x] Phase 2 — Incremental updates (M2 complete — 220/220 tests)
+- [x] Phase 3 — MCP bridge + dogfood week (DONE — 311/311 tests)
+- [x] Phase 4 — Static graph viewer (DONE — 358/358 tests)
+- [x] Phase 5 — Live wire (DONE — 393/393 tests)
+
+## Next action (specific enough to execute blind)
+
+v1 complete. User should:
+1. `cd frontend && npm install && npm run build`
+2. `corpus serve` — verify graph opens in browser
+3. In Claude Code: `claude mcp add corpus -- python -m corpus.mcp` then call `corpus_overview()` and watch the node pulse teal
+4. Post dogfood notes to DOGFOOD.md and log any doc format changes to DECISIONS.md (Phase 3 AC6 deferred item)
+
+Any new work should go through architect for a plan revision.

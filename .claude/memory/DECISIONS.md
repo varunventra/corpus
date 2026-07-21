@@ -87,3 +87,38 @@
 **Why:** External dependency edges would add noise without value — the graph is a map of the repo's own structure. External deps are not tracked files and have no node to point to. M2 may add an "external dependency" node type if that proves useful.
 **Alternatives rejected:** Creating stub nodes for external packages (would pollute the graph and complicate every query). Storing import specifiers as string attributes on edges without target nodes (inconsistent schema; nothing can resolve them).
 **Revisit if:** Dogfood shows that seeing which external packages each file uses is valuable in the graph viewer.
+
+---
+
+## 2026-07-17 — Phase 2: Stale flag set only when prior hash exists and hash differs
+**Decision:** `stale: true` is only written when `old_hash is not None and current_hash != old_hash`. Brand-new files (no prior hash) are NOT marked stale.
+**Why:** A reviewer BLOCKER caught the original code marking files with `old_hash is None` as stale, causing every file to be re-doc'd on every run after init, defeating M2's core invariant.
+**Alternatives rejected:** Treating new files as stale (incorrect — they were just doc'd on the full rebuild that added them; re-doc'ing them on the next run wastes LLM quota).
+
+---
+
+## 2026-07-19 — Phase 4: Edge normalization at serve time (from/to → source/target)
+**Decision:** `server.py GET /graph` normalizes edge keys from `from`/`to` (disk format) to `source`/`target` (react-force-graph format) at serve time. The on-disk `graph.json` format is unchanged.
+**Why:** react-force-graph requires `source`/`target`. Changing the graph.json schema would break all existing MCP tools and Phase 2 tests. A one-liner transform at the HTTP boundary is the least-invasive fix.
+**Alternatives rejected:** Changing graph.json schema to use source/target (would break MCP tools, test fixtures, and prior decisions). Adding a second edge format field on disk (redundant, doubles edge storage).
+
+---
+
+## 2026-07-19 — Phase 4: `webbrowser.open` fires via 1.5s daemon thread before uvicorn.run
+**Decision:** A daemon thread sleeps 1.5s then calls `webbrowser.open`, started before the blocking `uvicorn.run()` call.
+**Why:** `uvicorn.run()` is blocking — nothing after it executes until the server is killed. The browser must open after the server is ready; a 1.5s delay is safe on localhost (uvicorn binds well within 200ms).
+**Alternatives rejected:** uvicorn startup callback (uvicorn 0.29 doesn't expose a clean pre-request callback that fires after bind). Polling the port in the thread (correct but overengineered for localhost).
+
+---
+
+## 2026-07-19 — Phase 3: Click test runner cannot host a stdio MCP server in-process
+**Decision:** Tests for `corpus serve --mcp` mock `corpus.mcp.run` (the FastMCP entry point) rather than invoking the real server in the Click test runner.
+**Why:** FastMCP's stdio server writes directly to `sys.stdout`. Click's `CliRunner` replaces `sys.stdout` with a buffer and closes it after `invoke()` returns. The real server writing after that close raises `ValueError: I/O operation on closed file`. The product behavior is correct; only the in-process test harness is incompatible.
+**Alternatives rejected:** `mix_stderr=False` + `catch_exceptions=False` (doesn't help — the problem is stdout closed after invoke, not exception swallowing). Subprocess-based integration test (correct approach for a true end-to-end test, but disproportionate for a unit AC; deferred to Phase 5 dogfood verification).
+
+---
+
+## 2026-07-17 — Phase 2: Graph load gated on graph_path.exists() only, not stored_commit
+**Decision:** The incremental path is taken whenever `graph_path.exists()`, regardless of whether `stored_commit` is set in state.
+**Why:** A reviewer BLOCKER: gating on `stored_commit is not None` meant git-less environments always discarded the graph and ran a full rebuild. The stored commit is only needed to compute `git diff`, not to decide whether a valid graph exists on disk.
+**Alternatives rejected:** Keeping the commit gate (breaks git-less repos and repos where git has been re-initialized).

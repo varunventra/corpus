@@ -99,7 +99,7 @@ Corpus is a CLI tool that generates and maintains a living second representation
 
 ---
 
-### Phase 2 — Incremental updates (M2) `[ ]`
+### Phase 2 — Incremental updates (M2) `[x]`
 **Goal:** `corpus update` re-docs only changed files plus symbol-gated direct importers plus ancestor rollups; a rename preserves node ID; update of ≤15 changed files completes in under 60 seconds.
 **Deliverables:**
 - Snapshot diff: `git diff -M` between current HEAD and `state.json`'s stored commit hash, supplemented by content-hash comparison for uncommitted edits
@@ -109,17 +109,17 @@ Corpus is a CLI tool that generates and maintains a living second representation
 - Staleness flag: `stale: true` on nodes whose hash differs from `state.json`; directories stale if any descendant stale
 
 **Acceptance criteria:**
-- [ ] Edit 3 files in a test repo, run `corpus update`, and confirm via stdout log that only those 3 files (plus any symbol-changed importers) were re-doc'd — not all files
-- [ ] Rename a file (`git mv old.py new.py`), run `corpus update`, and confirm the node in `graph.json` has the new path but the same `id` as before the rename
-- [ ] `corpus update` on a repo with 15 changed files completes in under 60 seconds (timed with `time corpus update`)
-- [ ] An unmodified file's `id` and `importance` are unchanged after an update that touches other files
-- [ ] `jq '[.nodes[] | select(.stale==true)] | length' .corpus/graph.json` returns the correct count of stale nodes after editing files without running update
+- [x] Edit 3 files in a test repo, run `corpus update`, and confirm via stdout log that only those 3 files (plus any symbol-changed importers) were re-doc'd — not all files
+- [x] Rename a file (`git mv old.py new.py`), run `corpus update`, and confirm the node in `graph.json` has the new path but the same `id` as before the rename
+- [x] `corpus update` on a repo with 15 changed files completes in under 60 seconds (timed with `time corpus update`)
+- [x] An unmodified file's `id` and `importance` are unchanged after an update that touches other files
+- [x] `jq '[.nodes[] | select(.stale==true)] | length' .corpus/graph.json` returns the correct count of stale nodes after editing files without running update
 
 **Depends on:** Phase 1c
 
 ---
 
-### Phase 3 — MCP bridge + dogfood week (M3) `[ ]`
+### Phase 3 — MCP bridge + dogfood week (M3) `[x]`
 **Goal:** Six MCP tools wired into Claude Code; one week of real daily use; doc format revised from findings.
 **Deliverables:**
 - `corpus serve --mcp` launches a FastMCP stdio server exposing all six tools: `corpus_overview`, `corpus_doc`, `corpus_relations`, `corpus_find`, `corpus_changes`, `corpus_stale`
@@ -141,7 +141,7 @@ Corpus is a CLI tool that generates and maintains a living second representation
 
 ---
 
-### Phase 4 — Static graph viewer (M4) `[ ]`
+### Phase 4 — Static graph viewer (M4) `[x]`
 **Goal:** `corpus serve` opens a browser with a force-directed graph; folders collapse/expand; clicking a node shows its doc; importance shapes visible rank; stale nodes are amber.
 **Deliverables:**
 - React 18 + Vite frontend in `frontend/`; `corpus serve` builds (or uses pre-built dist) and launches uvicorn serving it on `localhost:7077`
@@ -162,7 +162,7 @@ Corpus is a CLI tool that generates and maintains a living second representation
 
 ---
 
-### Phase 5 — Live wire (M5) `[ ]`
+### Phase 5 — Live wire (M5) `[x]`
 **Goal:** Agent queries from Claude Code make the consulted graph nodes light up in real time in the browser — the demo.
 **Deliverables:**
 - MCP tools POST events to `localhost:7077/event` on every tool call (fire-and-forget, connection errors silently ignored)

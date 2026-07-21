@@ -30,7 +30,7 @@ import pytest
 from click.testing import CliRunner
 
 from corpus.cli import main
-from corpus.llm import extract_importance
+from corpus.llm import extract_importance, _is_malformed
 
 
 # ---------------------------------------------------------------------------
@@ -646,6 +646,92 @@ class TestExtractImportance:
         )
         result = extract_importance(doc)
         assert result == 4, f"Expected 4, got {result!r}"
+
+
+# ---------------------------------------------------------------------------
+# _is_malformed unit tests (regression for "All LLM providers exhausted" bug)
+# ---------------------------------------------------------------------------
+
+class TestIsMalformed:
+    """Regression tests for _is_malformed structural validation.
+
+    Root cause of the "All LLM providers exhausted on every file" bug:
+    _is_malformed required a Rating: N/5 line, but the system prompt does
+    not guarantee that format. A valid doc with prose Importance was flagged
+    malformed, exhausting retries, then Groq fallback, then raising LLMError.
+    Fix: _is_malformed checks only for the five required H2 headings.
+    """
+
+    _FULL_DOC_WITH_RATING = (
+        "## Purpose\nDoes something.\n\n"
+        "## Symbols\n- foo\n\n"
+        "## Connections\n(none)\n\n"
+        "## Gotchas\n(none)\n\n"
+        "## Importance\nRating: 3/5 — test file.\n"
+    )
+    _FULL_DOC_PROSE_IMPORTANCE = (
+        "## Purpose\nDoes something.\n\n"
+        "## Symbols\n- foo\n\n"
+        "## Connections\n(none)\n\n"
+        "## Gotchas\n(none)\n\n"
+        "## Importance\nThis module is moderately important.\n"
+    )
+
+    def test_well_formed_doc_with_rating_is_not_malformed(self):
+        """A complete doc including Rating: N/5 must NOT be flagged malformed."""
+        assert _is_malformed(self._FULL_DOC_WITH_RATING) is False
+
+    def test_well_formed_doc_without_rating_is_not_malformed(self):
+        """A doc with prose Importance but no Rating: N/5 must NOT be flagged malformed.
+
+        This is the regression case: models sometimes write a prose Importance
+        section instead of the Rating: N/5 line. The doc is structurally valid;
+        extract_importance() will simply return None, which callers handle.
+        """
+        assert _is_malformed(self._FULL_DOC_PROSE_IMPORTANCE) is False
+
+    def test_missing_purpose_heading_is_malformed(self):
+        """A doc without ## Purpose must be flagged malformed."""
+        doc = (
+            "## Symbols\n- foo\n\n"
+            "## Connections\n(none)\n\n"
+            "## Gotchas\n(none)\n\n"
+            "## Importance\nThis module is important.\n"
+        )
+        assert _is_malformed(doc) is True
+
+    def test_missing_symbols_heading_is_malformed(self):
+        """A doc without ## Symbols must be flagged malformed."""
+        doc = (
+            "## Purpose\nDoes something.\n\n"
+            "## Connections\n(none)\n\n"
+            "## Gotchas\n(none)\n\n"
+            "## Importance\nThis module is important.\n"
+        )
+        assert _is_malformed(doc) is True
+
+    def test_missing_importance_heading_is_malformed(self):
+        """A doc without ## Importance must be flagged malformed."""
+        doc = (
+            "## Purpose\nDoes something.\n\n"
+            "## Symbols\n- foo\n\n"
+            "## Connections\n(none)\n\n"
+            "## Gotchas\n(none)\n"
+        )
+        assert _is_malformed(doc) is True
+
+    def test_empty_string_is_malformed(self):
+        """Empty string must be flagged malformed."""
+        assert _is_malformed("") is True
+
+    def test_all_five_headings_required(self):
+        """Every one of the five H2 headings is required; any missing one flags malformed."""
+        headings = ["## Purpose", "## Symbols", "## Connections", "## Gotchas", "## Importance"]
+        full = "\n\n".join(f"{h}\ncontent\n" for h in headings)
+        assert _is_malformed(full) is False
+        for drop in headings:
+            partial = "\n\n".join(f"{h}\ncontent\n" for h in headings if h != drop)
+            assert _is_malformed(partial) is True, f"Expected malformed when {drop!r} is missing"
 
 
 # ---------------------------------------------------------------------------

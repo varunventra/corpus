@@ -11,7 +11,7 @@ from typing import Any
 
 DEFAULT_CONFIG: dict[str, Any] = {
     "provider": "gemini",
-    "gemini_model": "gemini-2.5-flash",
+    "gemini_model": "gemini-flash-lite-latest",
     "groq_model": "llama-3.3-70b-versatile",
     "limits": {
         "max_files_per_update": 50,
@@ -38,7 +38,7 @@ DEFAULT_CONFIG: dict[str, Any] = {
 
 _DEFAULT_CORPUS_YML = """\
 provider: gemini
-gemini_model: gemini-2.5-flash
+gemini_model: gemini-flash-lite-latest
 groq_model: llama-3.3-70b-versatile
 limits:
   max_files_per_update: 50
