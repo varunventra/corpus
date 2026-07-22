@@ -27,8 +27,8 @@ python -m corpus.cli serve   # opens localhost:7077
 - Phase 7 built: full Sahara warm theme (#faf5ee linen, #c2652a sienna), EB Garamond + Manrope fonts, three-column layout
 - Five functional tabs: Explorer (graph), Architecture (dir-only graph), Dependencies (1-hop subgraph), Symbols (searchable table), Overview (dashboard)
 - File Tree sidebar (toggleable), DocReader right panel (width-transition), Open in Editor (vscode:// deep link)
-- GET /meta backend route added; Windows path backslash normalization done
 - Reviewer: 1 BLOCKER + 4 MAJORs all fixed. QA: 54/54 pass. Build: 495kb, 0 errors.
+- **UNRESOLVED: Browser shows blank white page at localhost:7077. Not yet diagnosed — fix this first next session.**
 
 ## Phase 7 acceptance criteria status
 
@@ -54,9 +54,13 @@ All 54 automated checks PASS. Browser visual checks require `corpus serve` + man
 - [x] Phase 6 — Obsidian-style frontend rework (DONE — 64/65 automated checks)
 - [x] Phase 7 — Sahara theme + three-column layout + five tabs (DONE — 54/54 tests)
 
-## Next action
+## Next action — FIRST THING
 
-1. `cd frontend && npm run build` (already done this session — dist is current)
-2. `python -m corpus.cli serve` — open localhost:7077
-3. Check all five tabs, file tree toggle, click a node to open DocReader, check stale warning
-4. Any new work goes through architect for a plan revision
+**Blank white page bug.** `npm run build` passes clean (495kb, 0 errors) but browser shows blank white page.
+Likely causes to investigate in order:
+1. Browser console errors — open DevTools (F12) → Console tab, report any JS errors
+2. React not mounting — check if `#root` div exists in served HTML (`curl localhost:7077`)
+3. App.jsx crash on mount — likely a null deref in graphData before it loads (graphData?.nodes check)
+4. Wrong dist being served — verify `corpus/server.py` is serving from `frontend/dist/`
+
+After fix: verify all five tabs, file tree toggle, DocReader slide-in, stale warning.
