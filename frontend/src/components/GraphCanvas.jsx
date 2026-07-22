@@ -1,24 +1,31 @@
-import React, { useCallback, useRef } from 'react'
+import React, { useCallback, useRef, useState, useEffect } from 'react'
 import ForceGraph2D from 'react-force-graph-2d'
+import { lastName } from '../utils/path.js'
 
-// ---- Constants from design spec (light theme, white/red/achromatic) ----
-const COLOR_BG         = '#ffffff'
-const COLOR_FRESH      = '#E63946'
-const COLOR_FRESH_DARK = '#B71C2A'
-const COLOR_STALE      = '#9E9E9E'
-const COLOR_STALE_DARK = '#616161'
-const COLOR_EDGE       = '#aaaaaa'
-const COLOR_LABEL      = '#555555'
-const COLOR_RING       = '#E63946'
+// ── Sahara warm palette ─────────────────────────────────────────────────────
+const COLOR_BG                 = '#faf5ee'
+const COLOR_NODE_FILE          = '#ffffff'
+const COLOR_NODE_DIR           = '#c2652a'
+const COLOR_NODE_STALE         = '#f59e0b'
+const COLOR_NODE_PULSE         = '#14b8a6'
+const COLOR_NODE_SELECTED_RING = '#c2652a'
+const COLOR_EDGE               = 'rgba(216,208,200,0.6)'
+const COLOR_FILE_BORDER        = '#d8d0c8'
+const COLOR_LABEL              = '#605850'
+const COLOR_DIR_BADGE_TEXT     = '#ffffff'
 
-const FONT_LABEL     = "13px 'Inter', system-ui, sans-serif"
-const FONT_DIR_BADGE = "bold 8px 'Inter', system-ui, sans-serif"
-const FONT_DIR_COUNT = "8px 'Inter', system-ui, sans-serif"
+const FONT_LABEL     = "12px 'Manrope', system-ui, sans-serif"
+const FONT_DIR_BADGE = "bold 8px 'Manrope', system-ui, sans-serif"
+const FONT_DIR_COUNT = "8px 'Manrope', system-ui, sans-serif"
 
 function fileRadius(importance) {
-  if (importance == null) return 6
-  // importance 1 → 4px, importance 5 → 12px
-  return importance * 1.6 + 2.4
+  if (importance == null) return 8
+  return Math.min(8 + importance * 1.5, 14)
+}
+
+function nodeRadius(node) {
+  if (node.type === 'dir') return 18
+  return fileRadius(node.importance)
 }
 
 function isPulsing(node, pulseMap) {
@@ -27,38 +34,22 @@ function isPulsing(node, pulseMap) {
   return expiry !== undefined && expiry > Date.now()
 }
 
-function nodeColor(node, staleMap, pulseMap) {
-  if (isPulsing(node, pulseMap)) return '#ffffff'
-  const isStale = staleMap.get(node.id) ?? !!node.stale
-  if (node.type === 'dir') {
-    return isStale ? COLOR_STALE_DARK : COLOR_FRESH_DARK
-  }
-  return isStale ? COLOR_STALE : COLOR_FRESH
-}
-
-function nodeRadius(node) {
-  if (node.type === 'dir') return 16
-  return fileRadius(node.importance)
-}
-
-function lastName(path) {
-  const parts = path.split('/')
-  return parts[parts.length - 1] || path
-}
-
 /**
  * GraphCanvas renders the force-directed graph via react-force-graph.
  *
  * Props:
- *   graphData      — { nodes, links } already filtered for collapse/importance
- *   staleMap       — Map<id, boolean>
- *   collapsedMap   — Map<id, boolean>
- *   selectedNodeId — string | null
- *   onNodeClick    — (node) => void
- *   childCounts    — Map<id, number>  (visible child count for collapsed dirs)
- *   pulseMap       — Map<id, expiry_timestamp>  (node pulses white for ~2s)
+ *   fgRef            — forwarded ref from App.jsx, attached to ForceGraph2D
+ *   graphData        — { nodes, links } already filtered for collapse
+ *   staleMap         — Map<id, boolean>
+ *   collapsedMap     — Map<id, boolean>
+ *   selectedNodeId   — string | null
+ *   onNodeClick      — (node) => void
+ *   childCounts      — Map<id, number>
+ *   pulseMap         — Map<id, expiry_timestamp>
+ *   pulseAncestorIds — Set<id>
  */
 export function GraphCanvas({
+  fgRef,
   graphData,
   staleMap,
   collapsedMap,
@@ -66,10 +57,21 @@ export function GraphCanvas({
   onNodeClick,
   childCounts,
   pulseMap = new Map(),
+  pulseAncestorIds = new Set(),
 }) {
-  const fgRef = useRef()
+  const containerRef = useRef(null)
+  const [dims, setDims] = useState({ width: 0, height: 0 })
 
-  // nodeCanvasObject: custom rendering per node
+  useEffect(() => {
+    if (!containerRef.current) return
+    const ro = new ResizeObserver(entries => {
+      const { width, height } = entries[0].contentRect
+      setDims({ width, height })
+    })
+    ro.observe(containerRef.current)
+    return () => ro.disconnect()
+  }, [])
+
   const nodeCanvasObject = useCallback((node, ctx, globalScale) => {
     const r = nodeRadius(node)
     const isStale = staleMap.get(node.id) ?? !!node.stale
@@ -77,61 +79,77 @@ export function GraphCanvas({
     const isCollapsed = collapsedMap.get(node.id) ?? true
     const isSelected = node.id === selectedNodeId
     const nodePulsing = isPulsing(node, pulseMap)
-    const fill = nodeColor(node, staleMap, pulseMap)
 
-    // Stale ancestor glow (collapsed dir with stale descendants)
-    if (isDir && isCollapsed && isStale && !nodePulsing) {
+    // ── Step 1: fill pass ──────────────────────────────────────────────────────
+
+    if (nodePulsing) {
       ctx.save()
-      ctx.shadowColor = '#9E9E9E'
-      ctx.shadowBlur = 5 / globalScale
+      ctx.shadowColor = COLOR_NODE_PULSE
+      ctx.shadowBlur = 14 / globalScale
       ctx.beginPath()
       ctx.arc(node.x, node.y, r, 0, 2 * Math.PI)
-      ctx.fillStyle = fill
+      ctx.fillStyle = COLOR_NODE_PULSE
+      ctx.fill()
+      ctx.restore()
+    } else if (isDir) {
+      ctx.beginPath()
+      ctx.arc(node.x, node.y, r, 0, 2 * Math.PI)
+      ctx.fillStyle = COLOR_NODE_DIR
+      ctx.fill()
+    } else if (isStale) {
+      ctx.save()
+      ctx.shadowColor = COLOR_NODE_STALE
+      ctx.shadowBlur = 8 / globalScale
+      ctx.beginPath()
+      ctx.arc(node.x, node.y, r, 0, 2 * Math.PI)
+      ctx.fillStyle = COLOR_NODE_STALE
       ctx.fill()
       ctx.restore()
     } else {
+      // Fresh file node: white fill + thin warm-gray border
       ctx.beginPath()
       ctx.arc(node.x, node.y, r, 0, 2 * Math.PI)
-      ctx.fillStyle = fill
+      ctx.fillStyle = COLOR_NODE_FILE
       ctx.fill()
+      ctx.strokeStyle = COLOR_FILE_BORDER
+      ctx.lineWidth = 1 / globalScale
+      ctx.stroke()
     }
 
-    // Pulse ring for collapsed dirs whose descendants are pulsing
-    if (isDir && isCollapsed && !nodePulsing && node.__pulseAncestor) {
+    // ── Step 2: pulse ancestor ring ────────────────────────────────────────────
+    if (isDir && isCollapsed && !nodePulsing && pulseAncestorIds.has(node.id)) {
       ctx.beginPath()
-      ctx.arc(node.x, node.y, r + 2, 0, 2 * Math.PI)
-      ctx.strokeStyle = COLOR_RING
+      ctx.arc(node.x, node.y, r + 3, 0, 2 * Math.PI)
+      ctx.strokeStyle = COLOR_NODE_PULSE
       ctx.lineWidth = 2 / globalScale
       ctx.stroke()
     }
 
-    // Selection ring — red, sits outside fill
+    // ── Step 3: selection ring ─────────────────────────────────────────────────
     if (isSelected) {
       ctx.beginPath()
-      ctx.arc(node.x, node.y, r + 2, 0, 2 * Math.PI)
-      ctx.strokeStyle = COLOR_RING
+      ctx.arc(node.x, node.y, r + 2.5, 0, 2 * Math.PI)
+      ctx.strokeStyle = COLOR_NODE_SELECTED_RING
       ctx.lineWidth = 2.5 / globalScale
       ctx.stroke()
     }
 
-    // Dir node: ▶ indicator + child count when collapsed
+    // ── Step 4: dir badge ──────────────────────────────────────────────────────
     if (isDir && isCollapsed) {
       const count = childCounts.get(node.id) ?? 0
       if (count > 0) {
-        ctx.fillStyle = '#ffffff'
+        ctx.fillStyle = COLOR_DIR_BADGE_TEXT
         ctx.textAlign = 'center'
         ctx.textBaseline = 'middle'
-        // ▶ character centered slightly above middle
         ctx.font = FONT_DIR_BADGE
         ctx.fillText('▶', node.x, node.y - 2)
-        // count below ▶
         ctx.font = FONT_DIR_COUNT
-        ctx.fillText(String(count), node.x, node.y + 5)
+        ctx.fillText(String(count), node.x, node.y + 6)
       }
     }
 
-    // Node label — hide below zoom 0.2 (was 0.4)
-    if (globalScale >= 0.2) {
+    // ── Step 5: label ──────────────────────────────────────────────────────────
+    if (globalScale >= 0.15) {
       const label = lastName(node.path)
       const labelY = node.y + r + 6
       ctx.font = FONT_LABEL
@@ -140,7 +158,7 @@ export function GraphCanvas({
       ctx.textBaseline = 'top'
       ctx.fillText(label, node.x, labelY)
     }
-  }, [staleMap, collapsedMap, selectedNodeId, childCounts, pulseMap])
+  }, [staleMap, collapsedMap, selectedNodeId, childCounts, pulseMap, pulseAncestorIds])
 
   const nodePointerAreaPaint = useCallback((node, color, ctx) => {
     const r = nodeRadius(node)
@@ -151,7 +169,7 @@ export function GraphCanvas({
   }, [])
 
   const linkColor = useCallback(() => COLOR_EDGE, [])
-  const linkWidth = useCallback(() => 1.5, [])
+  const linkWidth = useCallback(() => 1, [])
 
   const handleNodeClick = useCallback((node) => {
     onNodeClick(node)
@@ -159,12 +177,16 @@ export function GraphCanvas({
 
   return (
     <div
+      ref={containerRef}
       style={{
         flex: 1,
         height: '100%',
         overflow: 'hidden',
         position: 'relative',
         background: COLOR_BG,
+        backgroundImage: `linear-gradient(to right, rgba(58,48,42,0.04) 1px, transparent 1px),
+                          linear-gradient(to bottom, rgba(58,48,42,0.04) 1px, transparent 1px)`,
+        backgroundSize: '32px 32px',
       }}
     >
       <ForceGraph2D
@@ -177,12 +199,12 @@ export function GraphCanvas({
         linkColor={linkColor}
         linkWidth={linkWidth}
         onNodeClick={handleNodeClick}
-        nodeLabel={() => ''}   // no built-in tooltip — we render labels in canvas
+        nodeLabel={() => ''}
         enableNodeDrag
         enableZoomInteraction
         enablePanInteraction
-        width={undefined}   // fills container
-        height={undefined}
+        width={dims.width || undefined}
+        height={dims.height || undefined}
       />
     </div>
   )

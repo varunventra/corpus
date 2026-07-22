@@ -13,14 +13,14 @@ html, body, #root {
 }
 
 body {
-  background: var(--color-bg);
+  background: #faf5ee;
   color: var(--color-text-primary);
   font-family: var(--font-sans);
   font-size: var(--text-base);
   line-height: 1.5;
 }
 
-/* Focus ring — visible for keyboard users only */
+/* Focus ring */
 :focus:not(:focus-visible) {
   outline: none;
 }
@@ -34,4 +34,19 @@ button {
   border: none;
   background: none;
   font: inherit;
+}
+
+/* Warm scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+}
+::-webkit-scrollbar-track {
+  background: #f2ece4;
+}
+::-webkit-scrollbar-thumb {
+  background: #d8d0c8;
+  border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #9a9088;
 }

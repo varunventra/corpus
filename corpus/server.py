@@ -85,6 +85,13 @@ async def get_doc(path: str = Query(..., description="Repo-relative file path"))
     return PlainTextResponse(content=content, media_type="text/plain; charset=utf-8")
 
 
+@app.get("/meta")
+async def get_meta() -> Response:
+    """Return absolute repo root path for the 'Open in Editor' deep link."""
+    repo_root = str(_corpus_dir().parent.resolve()).replace("\\", "/")
+    return JSONResponse(content={"repo_root": repo_root})
+
+
 @app.post("/event")
 async def post_event(request: Request) -> Response:
     """Accept an event from MCP tools or corpus update and fan it out to all WS clients.

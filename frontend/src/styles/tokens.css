@@ -1,30 +1,57 @@
 :root {
-  /* Colors */
-  --color-bg:              #ffffff;
-  --color-surface:         #fafafa;
-  --color-border:          #e0e0e0;
-  --color-surface-raised:  #f0f0f0;
+  /* ── Surfaces ─────────────────────────────────────────────────────────────── */
+  --color-bg:                #faf5ee;
+  --color-surface:           #faf5ee;
+  --color-surface-low:       #f6f0e8;
+  --color-surface-container: #f2ece4;
+  --color-surface-high:      #ece6dc;
+  --color-surface-highest:   #e6e0d6;
+  --color-surface-white:     #ffffff;
+  --color-surface-dim:       #dcd6cc;
 
-  --color-text-primary:    #111111;
-  --color-text-secondary:  #333333;
-  --color-text-muted:      #888888;
+  /* ── Borders ─────────────────────────────────────────────────────────────── */
+  --color-border:            #d8d0c8;
+  --color-border-strong:     #9a9088;
 
-  --color-accent:          #E63946;
-  --color-accent-dark:     #B71C2A;
+  /* ── Text ────────────────────────────────────────────────────────────────── */
+  --color-text-primary:      #3a302a;
+  --color-text-secondary:    #605850;
+  --color-text-muted:        #9a9088;
 
-  --color-stale:           #9E9E9E;
-  --color-stale-dark:      #616161;
-  --color-stale-badge-bg:  #FFF3E0;
-  --color-stale-badge-text:#E65100;
+  /* ── Accent (burnt sienna) ───────────────────────────────────────────────── */
+  --color-accent:            #c2652a;
+  --color-accent-dim:        #fbe8d8;
+  --color-accent-container:  #e08850;
+  --color-accent-inverse:    #f0a878;
 
-  --color-edge:            #aaaaaa;
-  --color-selected-ring:   #E63946;
-  --color-panel-accent:    #E63946;
+  /* ── Node fills (graph canvas) ───────────────────────────────────────────── */
+  --color-node-dir:          #c2652a;
+  --color-node-file:         #ffffff;
+  --color-node-stale:        #f59e0b;
+  --color-node-pulse:        #14b8a6;
+  --color-node-selected-border: #c2652a;
 
-  /* Typography */
-  --font-sans: 'Inter', system-ui, -apple-system, sans-serif;
-  --font-mono: 'JetBrains Mono', 'Fira Code', 'Cascadia Code', monospace;
+  /* ── Edges ────────────────────────────────────────────────────────────────── */
+  --color-edge:              rgba(216, 208, 200, 0.6);
+  --color-edge-active:       #c2652a;
 
+  /* ── Staleness badge ─────────────────────────────────────────────────────── */
+  --color-stale-badge-bg:    rgba(245, 158, 11, 0.10);
+  --color-stale-badge-border:rgba(245, 158, 11, 0.20);
+  --color-stale-badge-text:  #92400e;
+
+  /* ── Panel ────────────────────────────────────────────────────────────────── */
+  --color-panel-accent:      #c2652a;
+
+  /* ── Typography ──────────────────────────────────────────────────────────── */
+  --font-headline: 'EB Garamond', Georgia, serif;
+  --font-body:     'Manrope', system-ui, -apple-system, sans-serif;
+  --font-mono:     'JetBrains Mono', 'Fira Code', 'Cascadia Code', monospace;
+
+  /* Alias used by existing components */
+  --font-sans: var(--font-body);
+
+  /* ── Type scale ──────────────────────────────────────────────────────────── */
   --text-xs:   10px;
   --text-sm:   12px;
   --text-base: 13px;

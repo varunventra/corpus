@@ -19,14 +19,14 @@ const btnBase = {
 
 export function ImportanceFilter({ value, onChange }) {
   return (
-    <div style={{ display: 'flex', gap: '3px', alignItems: 'center' }}>
+    <div style={{ display: 'flex', gap: '4px', alignItems: 'center' }}>
       <span style={{
         fontFamily: 'var(--font-sans)',
         fontSize: 'var(--text-sm)',
-        color: '#888888',
+        color: 'var(--color-text-muted)',
         paddingRight: '8px',
       }}>
-        Show files with importance ≥
+        Importance ≥
       </span>
       {LEVELS.map(level => {
         const active = value === level
@@ -39,16 +39,16 @@ export function ImportanceFilter({ value, onChange }) {
             style={{
               ...btnBase,
               width: level === 'All' ? '44px' : '32px',
-              background: active ? '#E63946' : '#f0f0f0',
-              color: active ? '#ffffff' : '#666666',
-              borderColor: active ? '#E63946' : 'var(--color-border)',
+              background: active ? 'var(--color-accent)' : 'var(--color-surface-raised)',
+              color: active ? '#e6edf3' : 'var(--color-text-secondary)',
+              borderColor: active ? 'var(--color-accent)' : 'var(--color-border)',
               fontWeight: active ? '600' : '500',
             }}
             onMouseEnter={e => {
-              if (!active) e.currentTarget.style.background = '#e0e0e0'
+              if (!active) e.currentTarget.style.background = 'var(--color-border)'
             }}
             onMouseLeave={e => {
-              if (!active) e.currentTarget.style.background = '#f0f0f0'
+              if (!active) e.currentTarget.style.background = 'var(--color-surface-raised)'
             }}
           >
             {level}
