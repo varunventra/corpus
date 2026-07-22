@@ -110,6 +110,11 @@ export default function App() {
     })
   }, [nodes])
 
+  const closePanel = useCallback(() => {
+    setPanelOpen(false)
+    setSelectedNode(null)
+  }, [])
+
   // Escape key closes doc reader
   useEffect(() => {
     function handleKeyDown(e) {
@@ -172,11 +177,6 @@ export default function App() {
       setSelectedNode(node)
       setPanelOpen(true)
     }
-  }, [])
-
-  const closePanel = useCallback(() => {
-    setPanelOpen(false)
-    setSelectedNode(null)
   }, [])
 
   // ---- Loading / error / empty ----

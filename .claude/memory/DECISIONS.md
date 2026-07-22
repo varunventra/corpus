@@ -149,6 +149,22 @@
 
 ---
 
+## 2026-07-22 — Phase 7 blank-page bug: `closePanel` used before declaration in App.jsx — fixed by reordering, not investigating build tooling
+**Decision:** The browser-blank-page issue left open at Phase 7 close-out was a genuine JS temporal-dead-zone bug, not a build/bundler/environment problem. `App.jsx`'s "Escape closes doc reader" `useEffect` referenced `closePanel` in its dependency array before the `const closePanel = useCallback(...)` line that declared it, ~60 lines later in the same component. Dependency arrays are evaluated eagerly on every render — this threw a `ReferenceError` on first mount, unconditionally, on every machine. Fixed by moving the `closePanel` declaration above its first use. No logic changed.
+**Why:** Confirmed via a temporary `sourcemap: true, minify: false` rebuild (reverted immediately after) plus Claude-in-Chrome live console reads — the production-minified stack trace only showed `Cannot access 'L' before initialization`; the unminified rebuild resolved it to the real identifier `closePanel` and the real component (`App`), which pointed straight at the fix.
+**Alternatives rejected:** None investigated at length — once the readable stack trace named the exact variable and file, the fix was mechanical and obviously correct (a hooks-ordering bug has exactly one fix: declare before use).
+**Revisit if:** Never — this is closed. If a similar "works everywhere except the browser" bug appears again, the sourcemap+unminify diagnostic technique here is the fast path, not re-guessing from the 4 hypotheses STATE.md previously listed.
+
+---
+
+## 2026-07-22 — `tests/test_phase4.py::TestAC5StaticFileServing` (4 tests) cannot pass once `frontend/dist/` is built anywhere — pre-existing test flaw, not fixed yet
+**Decision:** Left unfixed and documented rather than patched in the same session as the `closePanel` fix, to keep that fix isolated and reviewable on its own.
+**Why:** These 4 tests assert the server returns 500 when `frontend/dist/` is missing, using `chdir(tmp_path)` for isolation. But `corpus/server.py:_dist_dir()` resolves the dist path relative to `__file__` (the installed package location), not `cwd` — so `chdir` never actually hides dist from the server's perspective. The tests only ever passed because no one had run `npm run build` on whatever machine ran them. This session built `frontend/dist/` for the first time on this machine (required to fix and verify the blank-page bug), which permanently exposed the flaw: these 4 tests will now fail on any machine where the frontend has ever been built, which is every real deployment.
+**Alternatives rejected:** None implemented yet. The eventual fix is almost certainly monkeypatching `corpus.server._dist_dir` in the test rather than relying on `chdir`.
+**Revisit if:** Next session picks up test maintenance — this is next on deck, flagged in STATE.md "Known issues & hacks".
+
+---
+
 ## 2026-07-21 — Phase 7: File Tree sidebar is toggleable, default visible, 260px fixed width
 **Decision:** The left File Tree sidebar is always mounted in the DOM. Its visibility is toggled by a button in the top-nav right cluster. Default state: visible. When hidden, the sidebar gets `width: 0; overflow: hidden` (not `display: none`) so the center column expands smoothly via CSS transition. Width when visible: `260px`, `flex-shrink: 0`.
 **Why:** The File Tree provides persistent spatial orientation — users can track where they are in the repo without opening the Symbols tab or reading graph node labels. Default-visible matches the Stitch design, which shows it open. Toggling rather than removing from DOM preserves the tree's expand/collapse state across hides (a user who collapses a directory should not find it re-expanded after toggling the sidebar). Width 260px is taken directly from the Stitch layout class `w-64` (16rem = 256px, rounded to 260px for pixel alignment with the 1px border).
