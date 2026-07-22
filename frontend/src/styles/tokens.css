@@ -1,52 +1,79 @@
 :root {
-  /* ── Surfaces ─────────────────────────────────────────────────────────────── */
-  --color-bg:                #faf5ee;
-  --color-surface:           #faf5ee;
-  --color-surface-low:       #f6f0e8;
-  --color-surface-container: #f2ece4;
-  --color-surface-high:      #ece6dc;
-  --color-surface-highest:   #e6e0d6;
-  --color-surface-white:     #ffffff;
-  --color-surface-dim:       #dcd6cc;
+  /* ── Surfaces (GitHub dark) ───────────────────────────────────────────────── */
+  --color-bg:                #0d1117;   /* --color-canvas-default */
+  --color-surface:           #161b22;   /* --color-canvas-overlay — header/nav bg */
+  --color-surface-low:       #161b22;   /* --color-canvas-subtle — FileTree sidebar bg */
+  --color-surface-container: #21262d;   /* hover/active row backgrounds */
+  --color-surface-high:      #21262d;
+  --color-surface-highest:   #30363d;
+  --color-surface-white:     #161b22;   /* --color-canvas-overlay — DocReader panel bg (no "white" surface in GH-dark) */
+  --color-surface-dim:       #010409;   /* --color-canvas-inset */
 
   /* ── Borders ─────────────────────────────────────────────────────────────── */
-  --color-border:            #d8d0c8;
-  --color-border-strong:     #9a9088;
+  --color-border:            #30363d;   /* --color-border-default */
+  --color-border-strong:     #6e7681;   /* --color-fg-subtle — nearest "stronger divider" GH offers */
 
   /* ── Text ────────────────────────────────────────────────────────────────── */
-  --color-text-primary:      #3a302a;
-  --color-text-secondary:    #605850;
-  --color-text-muted:        #9a9088;
+  --color-text-primary:      #e6edf3;   /* --color-fg-default */
+  --color-text-secondary:    #7d8590;   /* --color-fg-muted */
+  --color-text-muted:        #6e7681;   /* --color-fg-subtle */
 
-  /* ── Accent (burnt sienna) ───────────────────────────────────────────────── */
-  --color-accent:            #c2652a;
-  --color-accent-dim:        #fbe8d8;
-  --color-accent-container:  #e08850;
-  --color-accent-inverse:    #f0a878;
+  /* ── Accent (GitHub blue) ────────────────────────────────────────────────── */
+  --color-accent:            #4493f8;   /* --color-accent-fg */
+  --color-accent-dim:        rgba(56, 139, 253, 0.15);   /* --color-accent-subtle */
+  --color-accent-container:  #1f6feb;   /* --color-accent-emphasis */
+  --color-accent-inverse:    rgba(56, 139, 253, 0.4);    /* --color-accent-muted */
 
   /* ── Node fills (graph canvas) ───────────────────────────────────────────── */
-  --color-node-dir:          #c2652a;
-  --color-node-file:         #ffffff;
-  --color-node-stale:        #f59e0b;
-  --color-node-pulse:        #14b8a6;
-  --color-node-selected-border: #c2652a;
+  --color-node-dir:          #4493f8;   /* dir nodes — blue, nearest GH-dark analog to folder/info */
+  --color-node-file:         #161b22;   /* --color-canvas-overlay fill; border uses --color-border */
+  --color-node-stale:        #d29922;   /* --color-attention-fg */
+  --color-node-pulse:        #3fb950;   /* --color-success-fg — reused for Corpus's live-query pulse */
+  --color-node-selected-border: #4493f8; /* --color-accent-fg */
 
   /* ── Edges ────────────────────────────────────────────────────────────────── */
-  --color-edge:              rgba(216, 208, 200, 0.6);
-  --color-edge-active:       #c2652a;
+  --color-edge:              rgba(48, 54, 61, 0.6);   /* --color-border-default at reduced opacity */
+  --color-edge-active:       #4493f8;   /* --color-accent-fg */
 
   /* ── Staleness badge ─────────────────────────────────────────────────────── */
-  --color-stale-badge-bg:    rgba(245, 158, 11, 0.10);
-  --color-stale-badge-border:rgba(245, 158, 11, 0.20);
-  --color-stale-badge-text:  #92400e;
+  --color-stale-badge-bg:    rgba(210, 153, 34, 0.10);
+  --color-stale-badge-border:rgba(210, 153, 34, 0.20);
+  --color-stale-badge-text:  #d29922;   /* --color-attention-fg */
 
   /* ── Panel ────────────────────────────────────────────────────────────────── */
-  --color-panel-accent:      #c2652a;
+  --color-panel-accent:      #4493f8;   /* --color-accent-fg */
 
-  /* ── Typography ──────────────────────────────────────────────────────────── */
-  --font-headline: 'EB Garamond', Georgia, serif;
-  --font-body:     'Manrope', system-ui, -apple-system, sans-serif;
-  --font-mono:     'JetBrains Mono', 'Fira Code', 'Cascadia Code', monospace;
+  /* ── GitHub-dark primitives (new, added verbatim per user spec) ──────────── */
+  --color-canvas-default:    #0d1117;
+  --color-canvas-overlay:    #161b22;
+  --color-canvas-subtle:     #161b22;
+  --color-canvas-inset:      #010409;
+  --color-border-default:    #30363d;
+  --color-fg-default:        #e6edf3;
+  --color-fg-muted:          #7d8590;
+  --color-fg-subtle:         #6e7681;
+  --color-fg-onEmphasis:     #ffffff;
+  --color-accent-fg:         #4493f8;
+  --color-accent-emphasis:   #1f6feb;
+  --color-success-fg:        #3fb950;
+  --color-success-emphasis:  #238636;
+  --color-danger-fg:         #f85149;
+  --color-danger-emphasis:   #da3633;
+  --color-attention-fg:      #d29922;
+  --color-attention-emphasis:#9e6a03;
+  --color-done-fg:           #a371f7;
+  --color-btn-bg:            #21262d;
+  --color-btn-border:        rgba(240, 246, 252, 0.1);
+  --color-btn-hover-bg:      #30363d;
+  --color-btn-primary-bg:    #238636;
+  --color-btn-primary-hover-bg: #2ea043;
+  --shadow-resting:          0 1px 0 rgba(1, 4, 9, 0.1);
+  --shadow-overlay:          0 8px 24px rgba(1, 4, 9, 0.8);
+
+  /* ── Typography (system stack — no display/headline face in GH's type system) ── */
+  --font-headline: -apple-system, BlinkMacSystemFont, "Segoe UI", Noto Sans, Helvetica, Arial, sans-serif;
+  --font-body:     -apple-system, BlinkMacSystemFont, "Segoe UI", Noto Sans, Helvetica, Arial, sans-serif;
+  --font-mono:     ui-monospace, "SFMono-Regular", "SF Mono", Consolas, "Liberation Mono", monospace;
 
   /* Alias used by existing components */
   --font-sans: var(--font-body);

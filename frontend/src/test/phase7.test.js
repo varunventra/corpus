@@ -34,6 +34,8 @@ function exists(absPath) {
 // ---------------------------------------------------------------------------
 
 describe('Check 1 — npm run build exits 0', () => {
+  // The build subprocess takes ~6s — well over vitest's 5s default per-test
+  // timeout, which made this test a flake. Explicit generous timeout instead.
   it('build completes without error', () => {
     // Run the build; throws if exit code != 0
     let error = null
@@ -43,67 +45,81 @@ describe('Check 1 — npm run build exits 0', () => {
       error = e
     }
     expect(error, `Build failed:\n${error?.stderr?.toString()}`).toBeNull()
-  })
+  }, 60_000)
 })
 
 // ---------------------------------------------------------------------------
-// CHECK 2 — Warm theme tokens
+// CHECK 2 — Theme tokens
+// (Phase 8: Sahara literal expectations retargeted to the GitHub-dark palette.
+//  Same slots, new locked values.)
 // ---------------------------------------------------------------------------
 
-describe('Check 2 — Warm theme tokens in tokens.css', () => {
+describe('Check 2 — GitHub-dark theme tokens in tokens.css', () => {
   const tokens = src('styles/tokens.css')
 
   it('--color-bg is defined', () => {
     expect(tokens).toMatch(/--color-bg\s*:/)
   })
 
-  it('--color-bg value contains faf5ee', () => {
-    expect(tokens).toMatch(/--color-bg\s*:[^;]*faf5ee/)
+  it('--color-bg value contains 0d1117 (GH canvas-default)', () => {
+    expect(tokens).toMatch(/--color-bg\s*:[^;]*0d1117/)
   })
 
-  it('--color-primary OR --color-accent contains c2652a', () => {
-    // Spec uses --color-accent for sienna primary
-    expect(tokens).toMatch(/--color-accent\s*:[^;]*c2652a/)
+  it('--color-accent contains 4493f8 (GH accent-fg blue)', () => {
+    expect(tokens).toMatch(/--color-accent\s*:[^;]*4493f8/)
   })
 
-  it('--color-node-stale contains amber value f59e0b', () => {
-    expect(tokens).toMatch(/--color-node-stale\s*:[^;]*f59e0b/)
+  it('--color-node-stale contains attention amber d29922', () => {
+    expect(tokens).toMatch(/--color-node-stale\s*:[^;]*d29922/)
   })
 })
 
 // ---------------------------------------------------------------------------
-// CHECK 3 — No dark surfaces
+// CHECK 3 — Surfaces are GitHub-dark; retired Sahara literals are gone
+// (Phase 8 inverts the old "no dark surfaces" lock.)
 // ---------------------------------------------------------------------------
 
-describe('Check 3 — No dark surface hex values in tokens.css', () => {
+describe('Check 3 — GitHub-dark surface hex values in tokens.css', () => {
   const tokens = src('styles/tokens.css')
 
-  it('does NOT contain old dark bg #0d1117', () => {
-    expect(tokens).not.toContain('#0d1117')
+  it('contains GH dark bg #0d1117', () => {
+    expect(tokens).toContain('#0d1117')
   })
 
-  it('does NOT contain old dark surface #161b22', () => {
-    expect(tokens).not.toContain('#161b22')
+  it('contains GH dark surface #161b22', () => {
+    expect(tokens).toContain('#161b22')
   })
 
-  it('does NOT contain old dark raised surface #21262d', () => {
-    expect(tokens).not.toContain('#21262d')
+  it('contains GH dark raised surface #21262d', () => {
+    expect(tokens).toContain('#21262d')
+  })
+
+  it('does NOT contain retired Sahara literals (faf5ee / c2652a / f59e0b)', () => {
+    expect(tokens).not.toContain('faf5ee')
+    expect(tokens).not.toContain('c2652a')
+    expect(tokens).not.toContain('f59e0b')
   })
 })
 
 // ---------------------------------------------------------------------------
 // CHECK 4 — Fonts in index.html
+// (Phase 8: Google display fonts removed; Material Symbols icon font must stay
+//  — every icon glyph in the app depends on it.)
 // ---------------------------------------------------------------------------
 
-describe('Check 4 — Google Fonts link tags in index.html', () => {
+describe('Check 4 — Font link tags in index.html', () => {
   const html = readFileSync(resolve(ROOT, 'index.html'), 'utf8')
 
-  it('contains EB+Garamond font link', () => {
-    expect(html).toContain('EB+Garamond')
+  it('does NOT contain EB+Garamond font link', () => {
+    expect(html).not.toContain('EB+Garamond')
   })
 
-  it('contains Manrope font link', () => {
-    expect(html).toContain('Manrope')
+  it('does NOT contain Manrope font link', () => {
+    expect(html).not.toContain('Manrope')
+  })
+
+  it('still contains the Material Symbols Outlined icon font link', () => {
+    expect(html).toContain('Material+Symbols+Outlined')
   })
 })
 
@@ -323,26 +339,33 @@ describe('Check 14 — server.py /meta route', () => {
 })
 
 // ---------------------------------------------------------------------------
-// CHECK 15 — GraphCanvas warm theme
+// CHECK 15 — GraphCanvas GitHub-dark palette
+// (Phase 8: Sahara constants retargeted to the GH-dark constants.)
 // ---------------------------------------------------------------------------
 
-describe('Check 15 — GraphCanvas.jsx Sahara warm palette', () => {
+describe('Check 15 — GraphCanvas.jsx GitHub-dark palette', () => {
   const gc = src('components/GraphCanvas.jsx')
 
-  it('has #faf5ee as background color constant', () => {
-    expect(gc).toContain('#faf5ee')
+  it('has #0d1117 as background color constant', () => {
+    expect(gc).toContain('#0d1117')
   })
 
-  it('has #c2652a as a node color constant', () => {
-    expect(gc).toContain('#c2652a')
+  it('has the GH-dark node color constants (file/dir/stale/pulse)', () => {
+    expect(gc).toMatch(/COLOR_NODE_FILE\s*=\s*'#161b22'/)
+    expect(gc).toMatch(/COLOR_NODE_DIR\s*=\s*'#4493f8'/)
+    expect(gc).toMatch(/COLOR_NODE_STALE\s*=\s*'#d29922'/)
+    expect(gc).toMatch(/COLOR_NODE_PULSE\s*=\s*'#3fb950'/)
   })
 
   it('uses ResizeObserver', () => {
     expect(gc).toContain('ResizeObserver')
   })
 
-  it('does NOT contain old dark bg #0d1117', () => {
-    expect(gc).not.toContain('#0d1117')
+  it('does NOT contain retired Sahara colors (faf5ee / c2652a / f59e0b / 14b8a6)', () => {
+    expect(gc).not.toContain('#faf5ee')
+    expect(gc).not.toContain('#c2652a')
+    expect(gc).not.toContain('#f59e0b')
+    expect(gc).not.toContain('#14b8a6')
   })
 })
 

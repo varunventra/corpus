@@ -11,7 +11,7 @@ function ZoomControls({ fgRef }) {
       display: 'flex',
       flexDirection: 'column',
       gap: 1,
-      background: 'rgba(250,245,238,0.92)',
+      background: 'rgba(22,27,34,0.92)',
       border: '1px solid var(--color-border)',
       borderRadius: 6,
       overflow: 'hidden',
@@ -52,17 +52,17 @@ function StatsBar({ graphData }) {
       alignItems: 'center',
       gap: 12,
       padding: '6px 12px',
-      background: 'rgba(250,245,238,0.92)',
+      background: 'rgba(22,27,34,0.92)',
       border: '1px solid var(--color-border)',
       borderRadius: 6,
       pointerEvents: 'none',
     }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-        <div style={{ width: 6, height: 6, borderRadius: '50%', background: '#ffffff', border: '1px solid #d8d0c8' }} />
+        <div style={{ width: 6, height: 6, borderRadius: '50%', background: 'var(--color-node-file)', border: '1px solid var(--color-border)' }} />
         <span style={{ fontFamily: 'var(--font-mono)', fontSize: 'var(--text-xs)', color: 'var(--color-text-secondary)', textTransform: 'uppercase', letterSpacing: '0.08em' }}>Fresh</span>
       </div>
       <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-        <div style={{ width: 6, height: 6, borderRadius: '50%', background: '#f59e0b' }} />
+        <div style={{ width: 6, height: 6, borderRadius: '50%', background: 'var(--color-node-stale)' }} />
         <span style={{ fontFamily: 'var(--font-mono)', fontSize: 'var(--text-xs)', color: 'var(--color-text-secondary)', textTransform: 'uppercase', letterSpacing: '0.08em' }}>Stale</span>
       </div>
       <div style={{ width: 1, height: 12, background: 'var(--color-border)' }} />

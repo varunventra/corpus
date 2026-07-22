@@ -90,7 +90,7 @@ function TreeNode({ item, selectedNodeId, onNodeSelect, collapsedMap, onToggleCo
               width: 8,
               height: 8,
               borderRadius: '50%',
-              background: '#f59e0b',
+              background: 'var(--color-node-stale)',
               flexShrink: 0,
             }} title="Documentation stale" />
           )}
@@ -146,7 +146,7 @@ function TreeNode({ item, selectedNodeId, onNodeSelect, collapsedMap, onToggleCo
           width: 8,
           height: 8,
           borderRadius: '50%',
-          background: '#f59e0b',
+          background: 'var(--color-node-stale)',
           flexShrink: 0,
         }} title="Documentation stale" />
       )}

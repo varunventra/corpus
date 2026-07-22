@@ -2,21 +2,21 @@ import React, { useCallback, useRef, useState, useEffect } from 'react'
 import ForceGraph2D from 'react-force-graph-2d'
 import { lastName } from '../utils/path.js'
 
-// ── Sahara warm palette ─────────────────────────────────────────────────────
-const COLOR_BG                 = '#faf5ee'
-const COLOR_NODE_FILE          = '#ffffff'
-const COLOR_NODE_DIR           = '#c2652a'
-const COLOR_NODE_STALE         = '#f59e0b'
-const COLOR_NODE_PULSE         = '#14b8a6'
-const COLOR_NODE_SELECTED_RING = '#c2652a'
-const COLOR_EDGE               = 'rgba(216,208,200,0.6)'
-const COLOR_FILE_BORDER        = '#d8d0c8'
-const COLOR_LABEL              = '#605850'
+// ── GitHub dark palette ──────────────────────────────────────────────────────
+const COLOR_BG                 = '#0d1117'
+const COLOR_NODE_FILE          = '#161b22'
+const COLOR_NODE_DIR           = '#4493f8'
+const COLOR_NODE_STALE         = '#d29922'
+const COLOR_NODE_PULSE         = '#3fb950'
+const COLOR_NODE_SELECTED_RING = '#4493f8'
+const COLOR_EDGE               = 'rgba(48,54,61,0.6)'
+const COLOR_FILE_BORDER        = '#30363d'
+const COLOR_LABEL              = '#7d8590'
 const COLOR_DIR_BADGE_TEXT     = '#ffffff'
 
-const FONT_LABEL     = "12px 'Manrope', system-ui, sans-serif"
-const FONT_DIR_BADGE = "bold 8px 'Manrope', system-ui, sans-serif"
-const FONT_DIR_COUNT = "8px 'Manrope', system-ui, sans-serif"
+const FONT_LABEL     = "12px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif"
+const FONT_DIR_BADGE = "bold 8px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif"
+const FONT_DIR_COUNT = "8px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif"
 
 function fileRadius(importance) {
   if (importance == null) return 8
@@ -184,8 +184,8 @@ export function GraphCanvas({
         overflow: 'hidden',
         position: 'relative',
         background: COLOR_BG,
-        backgroundImage: `linear-gradient(to right, rgba(58,48,42,0.04) 1px, transparent 1px),
-                          linear-gradient(to bottom, rgba(58,48,42,0.04) 1px, transparent 1px)`,
+        backgroundImage: `linear-gradient(to right, rgba(230,237,243,0.03) 1px, transparent 1px),
+                          linear-gradient(to bottom, rgba(230,237,243,0.03) 1px, transparent 1px)`,
         backgroundSize: '32px 32px',
       }}
     >

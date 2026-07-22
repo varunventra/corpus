@@ -262,7 +262,7 @@ export default function App() {
               style={{
                 paddingLeft: 32, paddingRight: 16, paddingTop: 6, paddingBottom: 6,
                 background: 'var(--color-surface-low)', border: '1px solid var(--color-border)',
-                borderRadius: 9999, fontFamily: 'var(--font-body)', fontSize: 13,
+                borderRadius: 6, fontFamily: 'var(--font-body)', fontSize: 13,
                 color: 'var(--color-text-primary)', width: 220, outline: 'none',
               }}
               onFocus={e => { e.target.style.borderColor = 'var(--color-accent)'; e.target.style.boxShadow = '0 0 0 1px var(--color-accent)' }}

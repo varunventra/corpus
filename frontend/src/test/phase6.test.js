@@ -49,7 +49,9 @@ describe('Check 2 — Token coverage in tokens.css', () => {
     '--color-node-pulse',
     '--color-edge',
     '--color-surface',
-    '--color-surface-raised',
+    // Phase 8: '--color-surface-raised' (Phase 6 Obsidian slot) retired;
+    // '--color-surface-container' is the current hover/active surface slot.
+    '--color-surface-container',
     '--color-border',
   ]
 
@@ -63,8 +65,9 @@ describe('Check 2 — Token coverage in tokens.css', () => {
 
 // ---------------------------------------------------------------------------
 // CHECK 3 — No hardcoded light hex colors in src files
-// Allowed: #ffffff only as the node-pulse token definition and its mirror
-//          constant in GraphCanvas.jsx. Everything else is a violation.
+// Allowed (Phase 8 GitHub dark): #ffffff only as the --color-fg-onEmphasis
+//          token definition and the COLOR_DIR_BADGE_TEXT constant in
+//          GraphCanvas.jsx. Everything else is a violation.
 // ---------------------------------------------------------------------------
 
 describe('Check 3 — No hardcoded light-theme hex colors', () => {
@@ -97,7 +100,7 @@ describe('Check 3 — No hardcoded light-theme hex colors', () => {
     })
   }
 
-  it('#ffffff only appears in token definition and its GraphCanvas mirror constant', () => {
+  it('#ffffff only appears as fg-onEmphasis token and GraphCanvas dir-badge constant', () => {
     const tokensCss = src('styles/tokens.css')
     const graphCanvas = src('components/GraphCanvas.jsx')
     const otherFiles = [
@@ -106,14 +109,16 @@ describe('Check 3 — No hardcoded light-theme hex colors', () => {
       'components/ImportanceFilter.jsx',
     ]
 
-    // In tokens.css it should only appear as the --color-node-pulse definition
+    // Phase 8: node-pulse is GH success-green (#3fb950); the only white left in
+    // tokens.css is the GH primitive --color-fg-onEmphasis.
     const tokenMatches = [...tokensCss.matchAll(/#ffffff/gi)]
-    expect(tokenMatches.length, 'tokens.css should have exactly one #ffffff (node-pulse)').toBe(1)
-    expect(tokensCss).toContain('--color-node-pulse:      #ffffff')
+    expect(tokenMatches.length, 'tokens.css should have exactly one #ffffff (fg-onEmphasis)').toBe(1)
+    expect(tokensCss).toMatch(/--color-fg-onEmphasis:\s*#ffffff/)
 
-    // In GraphCanvas it should only be the COLOR_NODE_PULSE constant
+    // In GraphCanvas the only white is the dir-badge text on blue dir nodes
     const gcMatches = [...graphCanvas.matchAll(/#ffffff/gi)]
-    expect(gcMatches.length, 'GraphCanvas.jsx should have exactly one #ffffff (COLOR_NODE_PULSE)').toBe(1)
+    expect(gcMatches.length, 'GraphCanvas.jsx should have exactly one #ffffff (COLOR_DIR_BADGE_TEXT)').toBe(1)
+    expect(graphCanvas).toMatch(/COLOR_DIR_BADGE_TEXT\s*=\s*'#ffffff'/)
 
     // All other files: zero
     for (const file of otherFiles) {
@@ -127,14 +132,17 @@ describe('Check 3 — No hardcoded light-theme hex colors', () => {
 })
 
 // ---------------------------------------------------------------------------
-// CHECK 4 — App.jsx has no header bar
+// CHECK 4 — App.jsx layout shell
+// (Phase 6's "no header" assertion retired: Phase 7 introduced the permanent
+//  top-nav <header> with the five tabs, and Phase 8 keeps it. The layout lock
+//  now asserts the header IS present.)
 // ---------------------------------------------------------------------------
 
-describe('Check 4 — No header bar in App.jsx', () => {
+describe('Check 4 — App.jsx layout shell (Phase 7+ top-nav header)', () => {
   const app = src('App.jsx')
 
-  it('App.jsx does not contain <header', () => {
-    expect(app).not.toContain('<header')
+  it('App.jsx renders the top-nav <header (Phase 7 three-column layout)', () => {
+    expect(app).toContain('<header')
   })
 
   it('App.jsx does not contain role="banner"', () => {
@@ -172,23 +180,27 @@ describe('Check 5 — DocReader panel positioning', () => {
 })
 
 // ---------------------------------------------------------------------------
-// CHECK 6 — Ctrl+K listener in App.jsx calls setPaletteOpen
+// CHECK 6 — App.jsx keyboard wiring
+// (Phase 6's Ctrl+K palette assertions retired: Phase 7 removed the
+//  CommandPalette from the rendered tree. The keydown listener now serves
+//  Escape-closes-doc-reader; this check locks that behavior AND locks the
+//  palette's removal so it doesn't silently return.)
 // ---------------------------------------------------------------------------
 
-describe('Check 6 — Ctrl+K keydown listener in App.jsx', () => {
+describe('Check 6 — App.jsx keydown listener (Escape closes doc reader)', () => {
   const app = src('App.jsx')
 
   it('App.jsx has a document keydown listener', () => {
     expect(app).toContain("document.addEventListener('keydown'")
   })
 
-  it('keydown handler checks ctrlKey or metaKey plus key==="k"', () => {
-    expect(app).toMatch(/ctrlKey|metaKey/)
-    expect(app).toMatch(/e\.key\s*===\s*['"]k['"]/)
+  it('keydown handler checks key === "Escape"', () => {
+    expect(app).toMatch(/e\.key\s*===\s*['"]Escape['"]/)
   })
 
-  it('keydown handler calls setPaletteOpen', () => {
-    expect(app).toContain('setPaletteOpen')
+  it('App.jsx no longer references the removed CommandPalette', () => {
+    expect(app).not.toContain('setPaletteOpen')
+    expect(app).not.toContain('CommandPalette')
   })
 })
 
@@ -419,9 +431,10 @@ describe('Additional spec checks', () => {
     expect(panel).toContain('450')
   })
 
-  it('GraphCanvas warm bg color is #faf5ee (Phase 7 Sahara palette)', () => {
+  it('GraphCanvas bg color is #0d1117 (Phase 8 GitHub dark palette)', () => {
     const gc = src('components/GraphCanvas.jsx')
-    expect(gc).toContain("'#faf5ee'")
+    expect(gc).toContain("'#0d1117'")
+    expect(gc).not.toContain("'#faf5ee'")
   })
 
   it('GraphCanvas pulse glow uses shadowBlur = 14 / globalScale', () => {

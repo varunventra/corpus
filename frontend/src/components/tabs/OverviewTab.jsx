@@ -33,7 +33,7 @@ function NodeRow({ node, section, degreeMap, onNodeSelect }) {
       onMouseEnter={e => e.currentTarget.style.borderColor = 'var(--color-accent)'}
       onMouseLeave={e => e.currentTarget.style.borderColor = 'var(--color-border)'}
     >
-      {section === 'stale' && <div style={{ width: 8, height: 8, borderRadius: '50%', background: '#f59e0b', flexShrink: 0 }} />}
+      {section === 'stale' && <div style={{ width: 8, height: 8, borderRadius: '50%', background: 'var(--color-node-stale)', flexShrink: 0 }} />}
       <span style={{ fontFamily: 'var(--font-body)', fontSize: 14, fontWeight: 600, color: 'var(--color-text-primary)', flex: 1 }}>
         {lastName(node.path)}
       </span>
@@ -119,7 +119,7 @@ export function OverviewTab({ nodes, edges, graphData, staleMap, onNodeSelect })
           ].map(({ count, label }) => (
             <div key={label} style={{
               flex: 1, background: 'var(--color-surface-white)',
-              border: '1px solid var(--color-border)', borderRadius: 12,
+              border: '1px solid var(--color-border)', borderRadius: 8,
               padding: '24px 20px', display: 'flex', flexDirection: 'column', gap: 4,
             }}>
               <span style={{ fontFamily: 'var(--font-headline)', fontSize: 36, fontWeight: 700, color: 'var(--color-accent)', lineHeight: 1 }}>{count}</span>

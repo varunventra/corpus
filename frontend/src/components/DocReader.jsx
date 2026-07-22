@@ -100,8 +100,7 @@ export function DocReader({ node, isOpen, onClose, nodes, edges, staleMap, onNod
         <div style={{
           padding: '20px 24px 16px',
           borderBottom: '1px solid var(--color-border)',
-          background: 'rgba(250,245,238,0.8)',
-          backdropFilter: 'blur(8px)',
+          background: 'var(--color-canvas-overlay)',
           flexShrink: 0,
         }}>
           {/* Row 1: type badge + buttons */}
@@ -188,13 +187,13 @@ export function DocReader({ node, isOpen, onClose, nodes, edges, staleMap, onNod
               padding: '12px 16px',
               background: 'var(--color-stale-badge-bg)',
               border: '1px solid var(--color-stale-badge-border)',
-              borderRadius: 12,
+              borderRadius: 8,
               display: 'flex', gap: 12, alignItems: 'flex-start',
             }}>
-              <span className="material-symbols-outlined" aria-hidden="true" style={{ color: '#d97706', fontSize: 20, marginTop: 1, flexShrink: 0 }}>warning</span>
+              <span className="material-symbols-outlined" aria-hidden="true" style={{ color: 'var(--color-stale-badge-text)', fontSize: 20, marginTop: 1, flexShrink: 0 }}>warning</span>
               <div>
-                <h4 style={{ fontFamily: 'var(--font-body)', fontSize: 13, fontWeight: 700, color: '#92400e', margin: '0 0 4px' }}>Documentation Stale</h4>
-                <p style={{ fontFamily: 'var(--font-body)', fontSize: 12, color: '#b45309', margin: 0, lineHeight: 1.5 }}>
+                <h4 style={{ fontFamily: 'var(--font-body)', fontSize: 13, fontWeight: 700, color: 'var(--color-stale-badge-text)', margin: '0 0 4px' }}>Documentation Stale</h4>
+                <p style={{ fontFamily: 'var(--font-body)', fontSize: 12, color: 'var(--color-stale-badge-text)', margin: 0, lineHeight: 1.5 }}>
                   Source code has changed significantly since this documentation was generated. Review recommended.
                 </p>
               </div>
@@ -229,10 +228,10 @@ export function DocReader({ node, isOpen, onClose, nodes, edges, staleMap, onNod
               <h3 style={sectionHeadingStyle}>Key Symbols</h3>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
                 {node.symbols.map(sym => (
-                  <div key={sym.name} style={{ padding: '14px 16px', background: 'var(--color-surface)', borderRadius: 10, border: '1px solid var(--color-border)' }}>
+                  <div key={sym.name} style={{ padding: '14px 16px', background: 'var(--color-surface)', borderRadius: 8, border: '1px solid var(--color-border)' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: sym.description ? 6 : 0 }}>
                       <span style={{
-                        background: sym.kind?.toUpperCase() === 'CLASS' ? 'var(--color-accent-dim)' : 'rgba(96,88,80,0.08)',
+                        background: sym.kind?.toUpperCase() === 'CLASS' ? 'var(--color-accent-dim)' : 'rgba(125,133,144,0.08)',
                         color: sym.kind?.toUpperCase() === 'CLASS' ? 'var(--color-accent)' : 'var(--color-text-secondary)',
                         fontFamily: 'var(--font-body)', fontSize: 10, fontWeight: 700,
                         padding: '2px 8px', borderRadius: 4, textTransform: 'uppercase', letterSpacing: '0.06em',
@@ -301,14 +300,14 @@ export function DocReader({ node, isOpen, onClose, nodes, edges, staleMap, onNod
                 display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
                 width: '100%', padding: '10px 0',
                 background: 'var(--color-surface)', color: 'var(--color-accent)',
-                border: '1px solid rgba(194,101,42,0.30)', borderRadius: 8,
+                border: '1px solid rgba(68,147,248,0.30)', borderRadius: 8,
                 fontFamily: 'var(--font-body)', fontSize: 13, fontWeight: 600,
                 textDecoration: 'none',
                 cursor: repoRoot && node ? 'pointer' : 'not-allowed',
                 opacity: repoRoot && node ? 1 : 0.5,
                 transition: 'background 120ms',
               }}
-              onMouseEnter={e => { if (repoRoot && node) e.currentTarget.style.background = 'rgba(194,101,42,0.05)' }}
+              onMouseEnter={e => { if (repoRoot && node) e.currentTarget.style.background = 'rgba(68,147,248,0.08)' }}
               onMouseLeave={e => e.currentTarget.style.background = 'var(--color-surface)'}
               title={!repoRoot ? 'repoRoot not available — start corpus serve to enable this' : undefined}
             >

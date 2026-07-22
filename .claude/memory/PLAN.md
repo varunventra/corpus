@@ -669,6 +669,238 @@ Node draw logic adjustments:
 
 ---
 
+### Phase 8 — GitHub dark theme retrofit `[x]`
+
+**Goal:** Wholesale-replace the "Sahara" warm light theme with a GitHub-dark-mode-style theme, using the user-supplied token/typography/structural spec verbatim — a pure CSS/token/typography pass with zero component structure, layout, routing, state, or functionality changes.
+
+**Scope constraint (binding):** If achieving any requirement below would require moving a component, adding/removing a prop or handler, or restructuring JSX (not just its inline `style` object or a CSS file), that requirement is skipped and flagged in the PR, not implemented.
+
+---
+
+#### Non-goals for Phase 8
+
+- No light mode, no `prefers-color-scheme` toggle. GitHub-dark is the sole theme, same as Sahara was. (User confirmed this explicitly — supersedes the Sahara-only decision the same way Phase 7 superseded Phase 6.)
+- No new components, no Button/Card/Input/Modal primitives extracted. This codebase has no such shared primitives today (styling is inline `style={{...}}` objects per component, not a component library) — Phase 8 edits those inline objects' *values* in place, it does not refactor them into shared components. Extracting primitives is a real refactor and is explicitly out of scope.
+- No change to `useGraph.js`, `useDoc.js`, `useMeta.js`, any Python/backend file (other than what's already true — none), MCP tools, or `.corpus/` storage.
+- No restyle of `CommandPalette.jsx`, `Minimap.jsx`, `ImportanceFilter.jsx`. These three components exist on disk but are **not imported or rendered** anywhere (confirmed Phase 7 decision — dead code). Restyling unrendered code has zero user-visible effect; leaving their Sahara-era literal colors in place is fine. Parking-lot note added instead.
+- No redesign of layout, tab structure, or the five-tab / three-column model. Only surface treatment changes.
+
+---
+
+#### Token mapping — GitHub dark primitives (user spec, verbatim) → existing app-specific CSS variable *names*
+
+Per the user's own implementation instruction ("preserve variable *names* already in use where possible — just remap their values"), `tokens.css`'s existing variable names stay; only values change. The user's spec gives generic GitHub primitives but this app's `tokens.css` has Corpus-specific slots (`--color-node-dir`, `--color-node-pulse`, etc.) that the generic spec doesn't address 1:1. The mapping below applies the given primitives to those slots. **This mapping is a judgment call, not given literally in the user's spec — flagged for a quick confirmation before `builder` starts, not a request to redesign the palette.**
+
+```
+--color-bg                 → --color-canvas-default   #0d1117
+--color-surface             → --color-canvas-overlay   #161b22   (was Sahara "surface"; used for header/nav bg)
+--color-surface-low         → --color-canvas-subtle    #161b22   (FileTree sidebar bg)
+--color-surface-container   → #21262d                            (hover/active row backgrounds)
+--color-surface-high        → #21262d
+--color-surface-highest     → #30363d
+--color-surface-white       → --color-canvas-overlay   #161b22   (DocReader panel bg — GH-dark has no "white" surface; this replaces Sahara's literal #ffffff panel background)
+--color-surface-dim         → #010409                  (--color-canvas-inset)
+
+--color-border               → --color-border-default   #30363d
+--color-border-strong        → --color-fg-subtle        #6e7681   (nearest "stronger divider" GH offers)
+
+--color-text-primary         → --color-fg-default        #e6edf3
+--color-text-secondary       → --color-fg-muted          #7d8590
+--color-text-muted           → --color-fg-subtle         #6e7681
+
+--color-accent                → --color-accent-fg         #4493f8
+--color-accent-dim            → --color-accent-subtle     rgba(56,139,253,0.15)
+--color-accent-container      → --color-accent-emphasis   #1f6feb
+--color-accent-inverse        → --color-accent-muted      rgba(56,139,253,0.4)
+
+--color-node-dir               → #4493f8   (dir nodes become blue — nearest GH-dark analog to a folder/info color; no sienna equivalent exists in the spec)
+--color-node-file              → --color-canvas-overlay  #161b22 (fill) + border --color-border-default (was white fill + tan border)
+--color-node-stale              → --color-attention-fg     #d29922
+--color-node-pulse               → --color-success-fg       #3fb950   (user-decided: reuse GH success-green rather than off-palette teal)
+--color-node-selected-border      → --color-accent-fg       #4493f8
+
+--color-edge                → --color-border-muted     #21262d (or --color-border-default at reduced opacity — builder's call within these two, cosmetic only)
+--color-edge-active           → --color-accent-fg        #4493f8
+
+--color-stale-badge-bg       → rgba(210,153,34,0.10)
+--color-stale-badge-border    → rgba(210,153,34,0.20)
+--color-stale-badge-text       → --color-attention-fg     #d29922
+
+--color-panel-accent        → --color-accent-fg         #4493f8
+```
+
+Add (new, not previously in `tokens.css`, needed to satisfy the user's spec exactly): `--color-success-fg`, `--color-success-emphasis`, `--color-danger-fg`, `--color-danger-emphasis`, `--color-attention-fg`, `--color-attention-emphasis`, `--color-done-fg`, `--color-btn-bg`, `--color-btn-border`, `--color-btn-hover-bg`, `--color-btn-primary-bg`, `--color-btn-primary-hover-bg`, `--shadow-resting`, `--shadow-overlay`, `--color-fg-onEmphasis`, `--color-canvas-inset`. These are added verbatim from the user's spec block even where nothing in Corpus currently consumes them — they establish the token vocabulary for future components without inventing new hex values.
+
+**Typography:**
+```
+--font-headline → -apple-system, BlinkMacSystemFont, "Segoe UI", Noto Sans, Helvetica, Arial, sans-serif
+--font-body     → -apple-system, BlinkMacSystemFont, "Segoe UI", Noto Sans, Helvetica, Arial, sans-serif
+--font-mono     → ui-monospace, "SFMono-Regular", "SF Mono", Consolas, "Liberation Mono", monospace
+--font-sans     → (alias, unchanged relationship to --font-body)
+```
+`--font-headline` and `--font-body` collapse to the same system stack per the user's spec ("system font stack, not a display font" — there is no separate display/headline face in GitHub's type system). Components that reference `var(--font-headline)` for large filename/heading text (`DocReader.jsx`, `App.jsx` wordmark, tab headings in `OverviewTab.jsx`) keep their weight/size but inherit the system stack instead of EB Garamond.
+
+---
+
+#### Files this phase must touch
+
+| File | What changes | Why |
+|---|---|---|
+| `frontend/src/styles/tokens.css` | All values remapped per table above; add the missing GH-spec tokens listed | The single source of truth for CSS custom properties |
+| `frontend/src/styles/global.css` | `body` background/color inherit new tokens (no literal `#faf5ee` — currently hardcoded on line 16, must become `var(--color-canvas-default)`); confirm/adjust base `font-size` to 14px (see risk flag) | Root-level typography + the one hardcoded literal color outside tokens.css |
+| `frontend/index.html` | Remove the EB Garamond + Manrope Google Fonts `<link>` (line 9). **Keep** the Material Symbols Outlined icon font `<link>` (line 10) — every icon in the app (`search`, `settings`, `refresh`, `folder`, `description`, `close`, `edit`, `warning`, `arrow_forward`, `account_tree`, `history`, `open_in_new`) depends on it; removing it breaks every icon glyph in the UI, which is a functional regression disguised as a font cleanup | Directly named in the task brief; confirmed distinction between display-font removal (in scope) and icon-font removal (out of scope, would break rendering) |
+| `frontend/src/components/GraphCanvas.jsx` | The 10 module-level `COLOR_*` JS constants (lines 6–15) remapped to the GH-dark equivalents in the table above; the 3 `FONT_*` constants (lines 17–19) drop `'Manrope'` for the system stack (or monospace — see risk flag on node labels); the two literal `rgba(58,48,42,0.04)` grid-line values (lines 187–188) recolored to a GH-dark-appropriate faint value (e.g. `rgba(230,237,243,0.03)`) | **Decided in-scope** (see reasoning below) — these are pure presentation constants consumed only by `ctx.fillStyle`/`ctx.strokeStyle`; no logic branches on their values |
+| `frontend/src/components/DocReader.jsx` | `mdComponents` object (lines 19–30) — all `var(--color-*)` references already token-driven, auto-propagate from `tokens.css`, but hardcoded literals do not: `color: '#d97706'` (line 194, stale warning icon), `color: '#92400e'` (line 196), `color: '#b45309'` (line 197), `border: '1px solid rgba(194,101,42,0.30)'` (line 304, Open-in-Editor button), `rgba(194,101,42,0.05)` hover fill (line 311) — all need direct remap to GH-dark attention/accent equivalents. Also: `backdropFilter: 'blur(8px)'` on the sticky header (line 104) must be **removed** — the user's spec explicitly forbids glassmorphism/blur (spec §4); replace with a solid `var(--color-canvas-overlay)` background, no transparency. Border-radius literals (12, 10, 8, 4, 6, 3 scattered across this file) capped per spec §3 (6px controls, 8px max containers) | Highest concentration of hardcoded Sahara-sienna literals + the one explicit blur violation in the whole codebase |
+| `frontend/src/components/FileTree.jsx` | 2 literal `'#f59e0b'` occurrences (stale dot) remapped to `var(--color-attention-fg)` or the literal GH amber; row selection border/background remapped via tokens (already var-driven, should mostly cascade) | Small but non-token literal |
+| `frontend/src/components/tabs/ExplorerTab.jsx` | Legend swatches use literal `'#ffffff'`, `'#d8d0c8'`, `'#f59e0b'`, and `rgba(250,245,238,0.92)` translucent overlay backgrounds (lines 14, 55, 61, 65) — all remapped | Stats-bar / legend chip literals |
+| `frontend/src/components/tabs/OverviewTab.jsx` | One literal `'#f59e0b'` (stale dot, line 36); stat-chip border-radius/padding audited against §3 density rules | Overview dashboard chips |
+| `frontend/src/components/tabs/SymbolsTab.jsx`, `DependenciesTab.jsx`, `ArchitectureTab.jsx` | Border-radius/badge literals audited for the 6/8px cap; no color literals found outside tokens — should mostly cascade from `tokens.css` alone | Confirm-only pass expected, not a rewrite |
+| `frontend/src/App.jsx` | Search input `borderRadius: 9999` (line 265, a full pill) **must drop to ≤8px** per spec §3 ("no pill buttons... nothing above [8px]"); tab-active/hover backgrounds already token-driven; `retryBtn`/`fullscreenCenter` shared style objects (bottom of file) — border-radius/colors confirmed against spec | The one clear pill-button spec violation in the codebase today |
+| `corpus/server.py` | **Not touched.** No backend file is in scope for this phase. | Confirms the "pure CSS pass" boundary explicitly, since Phase 7 touched `server.py` for `/meta` and a reviewer might otherwise assume symmetry |
+
+**Files intentionally left untouched (parking lot, dead code):** `CommandPalette.jsx`, `Minimap.jsx`, `ImportanceFilter.jsx` — unrendered, no visual effect from restyling them.
+
+---
+
+#### Reasoning: GraphCanvas.jsx JS color constants are in scope
+
+The task brief asks this to be decided explicitly rather than silently expanded. Decision: **in scope**, alongside `tokens.css`. Reasoning:
+1. They are pure presentation values — each is consumed only as an argument to `ctx.fillStyle` / `ctx.strokeStyle` / `ctx.shadowColor`; no conditional logic reads or branches on the specific hex value.
+2. Editing them changes zero props, handlers, JSX structure, or component boundaries — only the literal string assigned to a `const`.
+3. Direct precedent: both Phase 6 (Obsidian) and Phase 7 (Sahara) — the two prior "theme" phases — explicitly re-touched this exact file's color constants as their mechanism for re-skinning the canvas. Treating it as out-of-scope for Phase 8 alone would produce a canvas frozen in Sahara colors while every surrounding surface is GitHub-dark — an incoherent, half-migrated result, which is a worse outcome than the minor scope note this decision requires.
+
+---
+
+#### Risk flags / ambiguities requiring a decision before `builder` starts
+
+1. **RESOLVED by user:** `--color-node-pulse` maps to `--color-success-fg` (`#3fb950`, GitHub success-green) rather than keeping the off-palette teal `#14b8a6` or colliding with dir-node blue. Distinct from stale-amber (`#d29922`) and dir-blue (`#4493f8`), so at-a-glance distinguishability is preserved.
+2. **Base font size (§2: "14px, not 16px").** `tokens.css` already defines `--text-base: 13px` and `--text-md: 14px`; `global.css` sets `body { font-size: var(--text-base) }` (13px). Only 4 files in the whole frontend consume the `--text-*` scale directly (`global.css`, and three components — most components hardcode literal `fontSize: 13` / `14` per element instead of using the scale). Net effect: the app is already sub-16px everywhere in practice. Flagging so `builder` doesn't spend time chasing a requirement that's structurally already satisfied — the only real action needed is deciding whether `global.css`'s inherited default moves from 13px to 14px for consistency, which is cosmetically negligible either way.
+3. **GraphCanvas node labels (filenames) — sans vs. monospace.** The user's spec says monospace applies to "code, IDs, hashes, or tabular/technical data." A rendered filename on a graph canvas node arguably qualifies as "technical data," but Phase 6/7 both used the body sans font here, and GitHub's own file-tree/graph-like UIs (e.g. the repo file browser) use a sans face for filenames, reserving monospace for actual code/diff content. **Recommend keeping labels on the system sans stack**, not monospace — flagging only so this isn't silently decided without a paper trail.
+4. **GraphCanvas grid background technically uses `linear-gradient(...)`** (two 1px repeating lines forming a dot-grid), which is the standard CSS technique for a background grid — not a decorative gradient in the sense the user's §4 "no gradients" rule is targeting (visible color transitions/hero-banner gradients). **Recommend keeping the technique**, only recoloring the `rgba()` value to a GH-dark-appropriate faint tint. Flagged so a literal reading of "no gradients" doesn't strip the grid entirely, which would be a visual regression unrelated to the theme swap.
+5. **Spec §3 "only the single primary action per view gets `--color-btn-primary-bg`."** This app currently has no filled/primary CTA button anywhere in the rendered tree — buttons are icon-only (Refresh, Settings, Toggle) or bare-text (Retry, tab links). There is nothing to demote *from* colorful, and nothing that obviously qualifies as "the one primary action" to promote *to* green. **No action needed** — this requirement has no applicable target in the current UI; noting it so it isn't treated as an unmet acceptance criterion later.
+6. **`--color-border-strong` mapping.** GitHub's dark palette has no separate "strong border" tier the way Sahara did (`outline` vs `outline-variant`). Mapped to `--color-fg-subtle` (`#6e7681`) as the nearest available "more visible divider" — a judgment call, flagged for the same reason as the node-token mapping table above.
+
+---
+
+**Deliverables:**
+1. `tokens.css` — all existing variable names retained, values remapped to the table above; new GH-spec tokens added
+2. `global.css` — literal `#faf5ee` background removed in favor of `var(--color-canvas-default)`; font stack confirmed system-only
+3. `index.html` — EB Garamond/Manrope Google Fonts link removed; Material Symbols icon link retained unchanged
+4. `GraphCanvas.jsx` — 10 color constants + 3 font constants + grid-line rgba remapped; zero changes to draw logic, props, or component structure
+5. `DocReader.jsx` — hardcoded Sahara-sienna literals remapped; `backdropFilter: blur(8px)` removed (spec §4 blur ban); border-radius literals capped at 6/8px per §3
+6. `FileTree.jsx`, `ExplorerTab.jsx`, `OverviewTab.jsx` — literal `#f59e0b`/`#ffffff`/`#d8d0c8`/translucent-overlay values remapped
+7. `SymbolsTab.jsx`, `DependenciesTab.jsx`, `ArchitectureTab.jsx` — confirm-only pass for border-radius/badge compliance with §3
+8. `App.jsx` — search input border-radius dropped from `9999` (pill) to ≤8px; other inline literals confirmed against tokens
+9. A written resolution (from the user/orchestrator, not invented by `builder`) for risk flags 1–6 above, captured in DECISIONS.md before or alongside phase close-out
+
+**Acceptance criteria:**
+- [ ] `cd frontend && npm run dev` serves the app with `#0d1117` as the outermost background — visually confirm via browser: zero warm/tan/cream (`#faf5ee`-family) surfaces remain anywhere, including the DocReader panel (previously literal white) and the search input
+- [ ] `grep -c "faf5ee\|EB Garamond\|Manrope" frontend/src/styles/tokens.css frontend/src/styles/global.css frontend/index.html` returns `0` total matches (confirms full replacement of the removed literals/fonts; Material Symbols link is a separate string and is unaffected by this grep)
+- [ ] `fg-default` (`#e6edf3`) on `canvas-default` (`#0d1117`) is used for primary body text — visually confirm legible ~13:1 contrast per spec §5.6 (spot-check: nav wordmark, DocReader filename heading, FileTree file rows)
+- [ ] Search input in the top nav renders with `border-radius` ≤ 8px, not a full pill (visually confirm rounded corners are subtle, not capsule-shaped)
+- [ ] A stale node (in Explorer tab, FileTree, and DocReader stale badge) renders in the GitHub-dark attention/amber tone (`#d29922`-family), not the old Sahara amber (`#f59e0b`) or Sahara badge colors (`#92400e`/`#b45309`)
+- [ ] An MCP `corpus_doc()` call in Claude Code still pulses the target node green (`#3fb950`) with a visible glow ring — live-wire behavior is unbroken
+- [ ] DocReader panel header no longer has a blurred/translucent sticky background (spec §4 no-blur rule) — visually confirm a solid, opaque header background on scroll
+- [ ] `npm run build` completes with zero errors; `npm test` (or `npx vitest run`) shows no new failures beyond the pre-existing documented Phase 6/7 baseline in STATE.md
+- [ ] No JSX structure diff in any touched file beyond `style={{...}}` object values, `className`/font-family string literals, and the two named CSS files — verified by `git diff --stat` showing no added/removed lines outside style-value edits (a spot-check, not a strict line-count rule: new opening/closing tags, new props, new components, or moved elements in the diff would indicate scope creep)
+
+**Depends on:** Phase 7 (complete — this phase reskins the exact three-column/five-tab structure Phase 7 built; no new backend or data-layer work)
+
+---
+
+### Phase 9 — Graph UX overhaul: Overview/All-Files modes, label decluttering, layout physics `[ ]`
+
+**Goal:** The Explorer tab defaults to a curated "Overview" subgraph (importance- or degree-driven, dirs collapsed) with an explicit "All Files" escape hatch, non-overlapping physics-correct node placement, and legible non-overlapping labels — verified end-to-end on the same real repo (40 nodes / 49 edges) that surfaced the current breakage.
+
+**Binding requirements (already decided with the user — not open for re-litigation; this phase turns them into deliverables/ACs):**
+1. Two navigation modes in the Explorer tab: **Overview** (default, importance-curated subgraph + direct dependency edges, dirs collapsed) and **All Files** (explicit toggle, full expanded graph). Overview must degrade gracefully when `node.importance` is null everywhere (the current state of this dev machine — no LLM key set) rather than breaking or silently showing everything.
+2. Labels: tighten the existing `globalScale >= 0.15` visibility threshold **and** add real collision-avoidance (nudge-apart, optionally with a leader line) for labels simultaneously visible at a given zoom — both techniques, not either/or.
+3. Physics: retune d3-force parameters (charge/repulsion, radius-correct collision force, link distance, zoom-to-fit on load/mode-switch/filter-change) **and** apply a hierarchical/tree-or-radial (d3-hierarchy) initial-placement skeleton keyed to folder structure, with force simulation layered on top for local jitter/separation — both techniques, not either/or.
+
+---
+
+#### Scope note — this phase is Explorer-tab-scoped, but GraphCanvas.jsx is shared
+
+The physics retune, collision force, and label-collision pass live in `GraphCanvas.jsx`, which is also rendered by the Architecture and Dependencies tabs. Those tabs inherit the physics/label improvements for free (that's a good thing — they have the same overlap problems). The **Overview/All-Files mode toggle and curation logic are Explorer-tab-only** in this phase; Architecture and Dependencies tabs keep their existing dataset-filtering logic untouched.
+
+---
+
+#### Non-goals for Phase 9
+
+- **No backend or graph-schema changes.** `.corpus/graph.json`, the importance-scoring LLM pipeline, `staleMap` computation, and all Python code are untouched. This is a frontend rendering/interaction phase only.
+- **No curation/mode toggle for Architecture, Dependencies, or Symbols tabs.** Only the Explorer tab gets Overview/All-Files. If those tabs turn out to need the same treatment, that's a future phase.
+- **No persistence of the user's mode choice across page reloads or tab switches.** `explorerMode` resets to `'overview'` on every fresh load. LocalStorage persistence is parked, not built.
+- **No solving "All Files" legibility beyond layout physics + label decluttering.** No node clustering/aggregation UI, no search-within-graph, no progressive-disclosure-by-scroll for huge repos. All Files on a 1000-node repo may still be dense — that's the accepted trade-off of the explicit escape hatch, not a bug this phase fixes further.
+- **No keyboard-shortcut or accessibility pass for the new mode toggle** beyond standard button semantics (`aria-pressed`, focus ring). Full a11y audit is out of scope.
+- **No redesign of DocReader or FileTree.** Their content and behavior are unchanged; FileTree's own collapse/expand state is untouched by Explorer-mode switching.
+
+---
+
+#### Process note (per project protocol): designer build-spec required before builder starts
+
+This phase is heavily interaction-design-shaped — a curation algorithm, a mode-switch control, a label-declutter visual treatment, and a badge legibility fix all have multiple reasonable implementations. Per `CLAUDE.md`, `designer` must produce a concrete build spec (exact algorithm, exact thresholds, exact visual treatment, exact placement) before `builder` touches any code. The open questions below are what that spec must resolve — they are not proposals for `architect` to pick between, they're the list `designer` must answer definitively.
+
+**Open design questions for `designer`:**
+
+1. **Overview-mode curation algorithm, importance present:** exact selection rule — e.g. top-N by `node.importance` descending, or `importance >= threshold`, or top-X% capped at an absolute max? Does the selected set always pull in each included node's direct (1-hop) dependency neighbors even if those neighbors score low, per the binding requirement ("high-signal nodes... plus their direct dependency edges")?
+2. **Overview-mode curation algorithm, importance absent (this machine's actual current state):** exact fallback — collapsed-dirs-only (show zero file nodes until a dir is expanded) vs. degree-based curation (top-N file nodes by in+out edge degree) vs. a hybrid of both? Exact N or percentage cap?
+3. **Does the Overview node cap scale with repo size** (e.g., top 20% capped at 50) or stay a fixed absolute number regardless of repo size (10 nodes on a 40-node repo, 10 nodes on a 2000-node repo)?
+4. **Mode-switch UI control:** toggle button / segmented control / dropdown — and exact placement (top-nav right cluster, inside Explorer tab's existing stats-bar/zoom-controls corner, or a new dedicated control). Visual state for "which mode is active."
+5. **Label-collision algorithm and visual treatment:** simple iterative push-apart per frame vs. a real label-layout pass; how far a label may be displaced before a leader line is drawn back to its node; leader line style (color, width, dash pattern).
+6. **Exact new label zoom threshold** to replace `>= 0.15` — a fixed constant (e.g. `0.35`) or dynamic based on local node density in the current viewport?
+7. **Hierarchical/tree-or-radial layout scope:** does the d3-hierarchy initial-placement skeleton apply in both modes, or only in All Files mode (per the binding requirement's framing, "matters most for All Files... on large repos")? If threshold-gated, at what node count does it activate vs. plain force-from-random-start (e.g., only above 60–100 nodes)?
+8. **Live-wire pulse interaction with Overview mode's curated-out nodes:** when an MCP `corpus_doc()`/`corpus_overview()` call pulses a node that Overview mode has curated out of the visible set, what happens? Options include: temporarily reveal that node (and its ancestor chain) in Overview mode, auto-switch to All Files, or pulse the nearest visible collapsed ancestor only (the existing `pulseAncestorIds` mechanic). This is currently undefined and must not be left to `builder`'s guess.
+9. **Directory child-count badge legibility fix** (the sienna "29"/"6" badges the user mistook for noise): smaller badge treatment, hover tooltip, repositioning, or some combination — exact visual spec (size, position relative to node, background/text color from the GH-dark token set, whether the `▶` glyph and the count should visually separate more clearly).
+10. **Overview-mode collapse state:** does Overview mode reuse the exact same `collapsedMap` as All Files mode (so a manual expand/collapse in one mode is visible in the other), or does it maintain a separate mode-scoped collapse state so switching modes doesn't carry over a user's manual expansions?
+
+---
+
+#### Deliverables
+
+1. New pure-logic module — e.g. `frontend/src/lib/graphCuration.js` — exporting a function that takes `(nodes, edges, { hasImportance })` and returns the Overview-mode node/edge subset per designer's resolved algorithm (covers both the importance-present and importance-absent/degree-fallback paths).
+2. Mode toggle control (Overview / All Files) wired into the Explorer tab per designer's placement spec; `explorerMode` state (default `'overview'`), reset on fresh load.
+3. `GraphCanvas.jsx` — force-simulation retune: increased charge/repulsion (`d3Force('charge').strength(...)`), a collision force sized to each node's actual rendered radius (`d3Force('collide')`), increased link distance, `zoomToFit` triggered on initial load, on Overview/All-Files mode switch, and on any filter change.
+4. `GraphCanvas.jsx` — label-collision-avoidance pass per designer's spec (nudge-apart, optional leader line) layered on top of the tightened zoom threshold (replacing the current `>= 0.15` constant).
+5. New pure-logic module — e.g. `frontend/src/lib/hierarchyLayout.js` — using `d3-hierarchy` to compute an initial tree/radial position (keyed to folder path) for each node, seeded into the force simulation before it runs, per designer's scope decision (always-on vs. All-Files-only vs. node-count-gated).
+6. Directory child-count badge legibility fix in `GraphCanvas.jsx` per designer's exact spec.
+7. New dependency: `d3-hierarchy` added to `frontend/package.json`.
+8. All existing Explorer-tab behaviors preserved: collapse/expand of dirs, stale amber rendering + glow, live-wire pulse (teal→green already migrated in Phase 8) with ancestor-glow fallback, node click → Doc Reader.
+9. **Folded-in bug fix (discrete item, user-approved 2026-07-22):** `DocReader.jsx` (Key Symbols cards) and `SymbolsTab.jsx` treat `node.symbols` entries as `{name, kind, description}` objects, but `graph.json` stores plain strings — make both components shape-tolerant (`typeof sym === 'string'` → name is the string, kind/description absent; object → current behavior), fixing blank symbol names, always-"SYMBOL" badges, dead SymbolsTab search, and `key={sym.name}` React duplicate keys. No visual redesign — same markup, real data. This is the only change either file receives in this phase.
+
+---
+
+#### Files this phase will touch
+
+| File | What changes | Why |
+|---|---|---|
+| `frontend/src/components/GraphCanvas.jsx` | Force-sim parameter retune (charge, collision keyed to `nodeRadius()`, link distance), `zoomToFit` calls, label-collision/declutter pass layered on the zoom threshold, tightened threshold constant, dir badge legibility fix, seeding hook for hierarchy-layout initial positions | Owns the physics, the canvas draw loop, and the badge rendering already |
+| `frontend/src/components/tabs/ExplorerTab.jsx` | Mode toggle control (or its mount point, per designer placement), `explorerMode` state if scoped locally, passes curated vs. full `graphData` to `GraphCanvas`, triggers `zoomToFit` on mode switch | Owns Explorer-tab-only UI; mode toggle lives here unless designer places it in the top nav |
+| `frontend/src/App.jsx` | If designer places the mode toggle in the top-nav right cluster (an App-owned region) rather than inside the Explorer tab, `explorerMode` state lifts here instead; wires the curated-vs-full `graphData` computation before passing to `ExplorerTab` | Only touched if designer's placement choice requires it — flagged as conditional, not a guaranteed edit |
+| `frontend/src/lib/graphCuration.js` (new) | Pure function(s) implementing the Overview-mode selection algorithm, both importance-present and importance-absent/degree-fallback paths | Keeps curation logic unit-testable in isolation from React/canvas rendering |
+| `frontend/src/lib/hierarchyLayout.js` (new) | Pure function(s) wrapping `d3-hierarchy` to compute initial tree/radial coordinates from folder-path structure | Same testability rationale; isolates a new external dependency behind a small surface |
+| `frontend/package.json` | Add `d3-hierarchy` dependency | New layout technique requires it — not currently installed (confirmed: only `react-force-graph-2d` and `react-markdown` are current runtime deps) |
+
+**Files explicitly NOT touched by this phase:** `frontend/src/components/FileTree.jsx`, `frontend/src/hooks/useGraph.js`, `frontend/src/hooks/useDoc.js`, `frontend/src/hooks/useMeta.js`, `frontend/src/components/tabs/ArchitectureTab.jsx`, `frontend/src/components/tabs/DependenciesTab.jsx`, `frontend/src/components/tabs/OverviewTab.jsx`, all Python/backend files. (`DocReader.jsx` and `SymbolsTab.jsx` receive exactly one change each: the deliverable-9 symbols shape-tolerance fix — nothing else.)
+
+---
+
+**Acceptance criteria:**
+
+- [ ] On the same real test repo the user tested (40 nodes / 49 edges, no LLM key set → `node.importance` null on all nodes), loading the Explorer tab shows **Overview mode by default**, using the degree-based (or collapsed-dirs-only, per designer's resolved fallback) curation path — the stats-bar node count in Overview is visibly smaller than the full 40-node count.
+- [ ] Clicking the "All Files" toggle shows every node — stats-bar node count matches `jq '.nodes | length' .corpus/graph.json` exactly.
+- [ ] Switching between Overview and All Files re-triggers `zoomToFit` — all visible nodes are within the viewport bounds without manual panning immediately after the switch.
+- [ ] On the same 40-node repo in All Files mode at rest (simulation settled), no two node circles visually overlap — verified by a screenshot spot-check comparable to the one that surfaced this bug, now clean.
+- [ ] At a zoom level where 5+ node labels would be simultaneously visible, no two label bounding boxes overlap — at least one label in a dense cluster shows a visibly nudged/offset position (with leader line if designer's spec calls for one) rather than stacking illegibly.
+- [ ] The directory child-count badge (e.g., "29", "6") is visually legible as "a directory with N files," per designer's chosen treatment — spot-checked against the original user complaint ("random letters or symbols").
+- [ ] An MCP `corpus_doc()` call in Claude Code still triggers the live-wire pulse correctly in both modes, per designer's resolved answer to open question 8 (reveal / auto-switch / ancestor-glow-only).
+- [ ] `cd frontend && npm run build` completes with zero errors after adding `d3-hierarchy`; `npm test` (or `npx vitest run`) shows no new failures beyond the documented Phase 6/7/8 baseline in STATE.md.
+- [ ] Architecture and Dependencies tabs (which share `GraphCanvas.jsx`) still render correctly post-retune — spot-check that the physics/label changes don't break their existing filtered-dataset rendering.
+- [ ] Symbols fix: opening `cli.py` in the Doc Reader shows Key Symbols cards with real names (`main`, `init`, `update`, `serve`, ...) instead of blank rows; the Symbols tab lists real symbol names and typing `main` in its search filters to matching rows; no React duplicate-key warnings in the browser console.
+
+**Depends on:** Phase 8 closing out first (reviewer + qa + STATE.md/DECISIONS.md close-out complete) — Phase 8 and Phase 9 both edit `GraphCanvas.jsx`; `builder` must not start Phase 9 while Phase 8 is still open, to avoid two agents concurrently editing the same file. Also depends on Phase 7 (three-column layout, five tabs, Doc Reader — the structural baseline this phase reskins interaction on top of).
+
+---
+
 ## Parking lot
 
 > Ideas deferred mid-work. One line each. Reviewed only during plan revisions — not a backlog to secretly build from.
@@ -684,3 +916,6 @@ Node draw logic adjustments:
 - Switch `pathspec` dialect from `"gitwildmatch"` to `"gitignore"` in `ignore.py`/`config.py` — `gitwildmatch` deprecated in pathspec 1.1.1, will become breaking in a future release
 - `Found 1 files` grammar nit — should be `Found 1 file` (singular)
 - `corpus init --help` em-dash mojibake in Windows CP1252 console — encoding issue, not a code bug
+- `CommandPalette.jsx` / `Minimap.jsx` / `ImportanceFilter.jsx` still carry Sahara-era literal colors after Phase 8 (unrendered dead code, zero visual impact — restyle only if one of these is ever revived)
+- ~~Symbols string-vs-object shape bug (pre-existing since Phase 7)~~ — **folded into Phase 9 as deliverable 9** (user delegated the call 2026-07-22); see that phase's section
+- No shared Button/Card/Input/Modal primitive components exist anywhere in the frontend — every component inlines its own `style={{...}}` object, causing color/border-radius values to be duplicated dozens of times across files instead of centralized; a real extraction refactor, out of scope for any theme-only phase

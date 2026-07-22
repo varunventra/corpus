@@ -13,7 +13,7 @@ html, body, #root {
 }
 
 body {
-  background: #faf5ee;
+  background: var(--color-canvas-default);
   color: var(--color-text-primary);
   font-family: var(--font-sans);
   font-size: var(--text-base);
@@ -36,17 +36,17 @@ button {
   font: inherit;
 }
 
-/* Warm scrollbar */
+/* Scrollbar */
 ::-webkit-scrollbar {
   width: 6px;
 }
 ::-webkit-scrollbar-track {
-  background: #f2ece4;
+  background: var(--color-canvas-subtle);
 }
 ::-webkit-scrollbar-thumb {
-  background: #d8d0c8;
+  background: var(--color-border-default);
   border-radius: 3px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: #9a9088;
+  background: var(--color-fg-subtle);
 }
