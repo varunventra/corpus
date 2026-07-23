@@ -808,7 +808,7 @@ The task brief asks this to be decided explicitly rather than silently expanded.
 
 ---
 
-### Phase 9 — Graph UX overhaul: Overview/All-Files modes, label decluttering, layout physics `[ ]`
+### Phase 9 — Graph UX overhaul: Overview/All-Files modes, label decluttering, layout physics `[x]`
 
 **Goal:** The Explorer tab defaults to a curated "Overview" subgraph (importance- or degree-driven, dirs collapsed) with an explicit "All Files" escape hatch, non-overlapping physics-correct node placement, and legible non-overlapping labels — verified end-to-end on the same real repo (40 nodes / 49 edges) that surfaced the current breakage.
 
@@ -919,3 +919,5 @@ This phase is heavily interaction-design-shaped — a curation algorithm, a mode
 - `CommandPalette.jsx` / `Minimap.jsx` / `ImportanceFilter.jsx` still carry Sahara-era literal colors after Phase 8 (unrendered dead code, zero visual impact — restyle only if one of these is ever revived)
 - ~~Symbols string-vs-object shape bug (pre-existing since Phase 7)~~ — **folded into Phase 9 as deliverable 9** (user delegated the call 2026-07-22); see that phase's section
 - No shared Button/Card/Input/Modal primitive components exist anywhere in the frontend — every component inlines its own `style={{...}}` object, causing color/border-radius values to be duplicated dozens of times across files instead of centralized; a real extraction refactor, out of scope for any theme-only phase
+- Phase 9 reviewer NIT: `curateFiles` in `graphCuration.js` uses `Array.includes()` inside its expansion loop (O(n) per edge) instead of a `Set` lookup — fine at current repo scale, will matter on genuinely large repos
+- Phase 9 reviewer NIT: Explorer's `ModeToggle` segment padding is `6px 14px`; the design spec's own accessibility-floor fallback suggested `8px 14px` if measured height comes in under 32px — never actually measured. Low stakes, the real keyboard-focus requirement is already covered by the global `:focus-visible` rule.

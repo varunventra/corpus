@@ -5,59 +5,51 @@
 
 ## Where we are
 
-- **Current phase:** Phase 9 — Graph UX overhaul. **NOT STARTED on disk** — the builder agent for it crashed immediately (host hit an account-level API spend limit, not a code error) before writing a single file. Zero Phase 9 code exists anywhere in the repo.
-- **Last completed phase:** Phase 8 — GitHub dark theme retrofit (DONE — reviewer APPROVE, qa PASS 152/152, browser-verified live). This is what's actually sitting in the working tree right now, uncommitted.
-- **Awaiting:** A fresh session (possibly on a different machine — user is moving to their personal laptop) to launch Phase 9's builder from scratch. The user has already approved the Phase 9 design direction and the folded-in symbols fix — **no design/approval conversation is needed, go straight to delegating `builder`.**
-
-## Session interruption context (read this if you're the resuming session)
-
-This session hit a hard stop: the model account ran out of monthly spend credit mid-flight (`"You've hit your monthly spend limit"`), which killed the Phase 9 builder agent before it read a single file, let alone wrote one. The user then switched the session model back to Sonnet 5 and asked to pause everything and hand off cleanly — likely to continue from a different machine/login. **This is an infra/billing interruption, not a code or design failure.** Everything scoped for Phase 9 (PLAN.md section, `.claude/memory/phase9_design_spec.md`) is fully valid and ready to execute as-is.
-
-**Verified via `git status`/`git diff --stat` at hand-off (2026-07-22):** working tree = exactly Phase 8's finished state. 14 modified files (memory docs + Phase 8's frontend files), 2 untracked new files (`phase8.test.js`, `phase9_design_spec.md`). No `frontend/src/lib/` directory exists. No `d3-hierarchy` in `node_modules` or `package.json`. **Nothing to roll back — the failed agent left zero fingerprints.**
-
-**None of this is committed to git yet** — it's all working-tree changes. If continuing on another machine, this machine's uncommitted diff needs to travel with you (e.g. `git stash`, or just copy the working directory / push a WIP commit) — otherwise a fresh clone on the other laptop will show Phase 7's Sahara theme, not Phase 8's finished GitHub-dark theme.
+- **Current phase:** ALL PHASES COMPLETE (1a–9). v1 shipped with GitHub-dark theme + reworked Explorer graph UX. Nothing blocking.
+- **Last completed phase:** Phase 9 — Graph UX overhaul (DONE 2026-07-23 — reviewer REQUEST CHANGES → fix pass → orchestrator diff-verified → qa 198/198 → orchestrator browser-verified live, dramatic visual improvement confirmed).
+- **Awaiting:** Nothing blocking. User can explore the app; both Phase 8 and Phase 9 are committed and pushed to `origin/main`.
 
 ## Project identity
 
 **Corpus** — CLI + MCP server + live graph viewer that generates and maintains a living second representation of a codebase. Plain files in `.corpus/`. Python engine, React frontend. Local only, free-tier AI.
 
-## How to run (verified working on this machine 2026-07-22)
+## How to run
 
 ```bash
 cd C:\Users\VarunV\Desktop\corpus
 python -m pip install -e .
 cd frontend && npm install && npm run build && cd ..
-python -m corpus.cli serve     # opens localhost:7077
+python -m corpus.cli update    # regenerates .corpus/graph.json if stale
+python -m corpus.cli serve     # localhost:7077
 ```
 
-Node.js portable install at `C:\Users\VarunV\tools\node-v24.18.0-win-x64` on User PATH — **this path is specific to this machine; a personal laptop will need its own Node install** (system Node is fine there, this workaround was only needed because this machine had none and no admin rights). No `GEMINI_API_KEY`/`GROQ_API_KEY` set — docs/importance are null; graph structure works fine regardless.
+Node.js is a portable install at `C:\Users\VarunV\tools\node-v24.18.0-win-x64`, prefix to PATH if `node`/`npm` aren't found in a fresh shell: `export PATH="/c/Users/VarunV/tools/node-v24.18.0-win-x64:$PATH"` (bash) — this machine has no admin rights and no system Node. No `GEMINI_API_KEY`/`GROQ_API_KEY` set — docs/importance are null; graph structure and the Overview mode's degree-based fallback curation both work fine regardless.
 
-## What just happened (this session, 2026-07-22)
+## What just happened (2026-07-22 → 2026-07-23, one long session across a usage-limit interruption)
 
-- **Phase 8 complete and closed out:** Sahara warm theme wholesale-replaced by GitHub-dark (canvas `#0d1117`, accent blue `#4493f8`, stale amber `#d29922`, pulse green `#3fb950`, system font stack, EB Garamond/Manrope removed, Material Symbols icons kept). Pure CSS/token/value pass — reviewer read every JSX diff, confirmed zero structural changes. Files: tokens.css, global.css, index.html, GraphCanvas.jsx, DocReader.jsx, FileTree.jsx, ExplorerTab.jsx, OverviewTab.jsx, App.jsx. See DECISIONS.md 2026-07-22 entries (3 of them: theme supersession, pulse-color choice, hover-opacity judgment call).
-- **Frontend test suite fully green for the first time: 152/152.** QA retargeted 17 stale Sahara/Obsidian theme-lock assertions, added `phase8.test.js` (31 tests), fixed the long-standing build-check flake (explicit 60s per-test timeout).
-- **Phase 9 fully scoped, designed, and user-approved — but zero implementation exists.** User tested the live graph and found it badly broken: overlapping illegible labels, nodes clustered into a fraction of the canvas, circles overlapping, everything shown expanded at once with no high-level view (confirmed via live screenshot on a real 40-node/49-edge repo). Full requirements in PLAN.md's "### Phase 9 — Graph UX overhaul" section; every open design question resolved concretely in `.claude/memory/phase9_design_spec.md` (curation algorithm, Overview/All-Files mode toggle, label AABB-collision decluttering, d3-hierarchy-seeded layout for >60 nodes, directory badge redesign, pulse-reveal-when-curated-out behavior).
-- **Pre-existing bug found & folded into Phase 9 as deliverable 9:** `graph.json` stores `symbols` as plain strings but `DocReader.jsx`/`SymbolsTab.jsx` render `sym.name`/`sym.kind` as if they were objects → blank symbol names everywhere, dead Symbols-tab search, React duplicate-key warnings. Broken since Phase 7, not a Phase 8 regression. User explicitly delegated the "fold in vs. separate fix" call; folded in as its own discrete, separately-tested item — full one-line fix spec is in PLAN.md Phase 9 deliverable 9.
+- **Phase 8 (GitHub-dark theme retrofit):** complete, reviewed, 152/152 tests, browser-verified, **committed and pushed** at `c644857`.
+- **Phase 9 (Graph UX overhaul):** the user's core complaint — the Explorer graph was cluttered, labels overlapped illegibly, nodes clustered instead of spreading, everything showed at once with no high-level view — is fixed. Full cycle: `builder` implemented Overview/All-Files modes + curation algorithm + physics retune + label AABB-collision pass + hierarchy-seeded layout + directory badge redesign + a folded-in fix for a pre-existing symbols-rendering bug (graph.json stores symbols as plain strings, DocReader/SymbolsTab expected objects — real names were blank everywhere since Phase 7). `reviewer` found one real MAJOR bug (opening the Doc Reader or an MCP pulse forced an unwanted camera recenter — traced to the zoomToFit effect keying on raw object identity instead of actual content change) plus 2 minor issues (unpopulated degree field made label-priority a no-op on this exact no-API-key machine; pulse-revealed nodes didn't visually expand their ancestor folder). A second `builder` pass fixed all three with a content-fingerprint gate + degree wiring + ancestor-expand override. Orchestrator personally verified the fix diff line-by-line (not just trusted the report), then `qa` retargeted the one stale pre-existing test, added 45 new unit tests (198/198 total), and orchestrator did a live browser pass: **confirmed dramatic visual improvement** — Overview mode defaults to a curated 27-31-of-68 subset, All Files mode shows all nodes spread out with zero overlapping circles or labels (a night-and-day difference from the original bug screenshot), directory badges are legible (arrow + separate count circle), the MAJOR camera-jump bug is confirmed fixed (clicking a node to open Doc Reader no longer recenters), and the symbols fix confirmed live (Key Symbols cards show real names like `main`/`init`/`_post_graph_event` instead of blank rows).
+- **Committed and pushed** in one commit alongside Phase 8's already-pushed work (see git log for exact hash — this file doesn't hardcode it since it's written before the final commit of this session).
+- **Session note:** this work spanned a hard interruption (host hit a monthly API spend limit mid-Phase-9-build) and a user-initiated pause/handoff for a possible machine switch; both resolved cleanly with no lost work — STATE.md was kept current throughout specifically so an interrupted session could resume cold.
+- **Cleanup note:** two stray garbage files (`scs` and a long filename containing a sentence fragment) were found as untracked debris at close-out — traced to a subagent's `git diff` invoking the `less` pager interactively in a non-interactive shell and mangling output into files. Deleted before committing; not source content, not user data.
 
 ## Known issues & hacks
 
-- **Phase 8's one unverified AC:** live MCP `corpus_doc()` → green pulse round-trip not re-tested live after the theme swap (structural half is test-covered: `COLOR_NODE_PULSE '#3fb950'`, draw path unchanged). Verify opportunistically during Phase 9 qa, which needs the same round-trip anyway.
-- **`tests/test_phase4.py::TestAC5StaticFileServing`** — 4 Python tests assert 500-when-dist-missing but can't observe it because `server.py:_dist_dir()` is package-relative, not cwd-relative. Pre-existing test design flaw (DECISIONS.md 2026-07-22). Fix: monkeypatch `_dist_dir`. Still open, not urgent.
+- **`tests/test_phase4.py::TestAC5StaticFileServing`** — 4 Python tests, pre-existing `_dist_dir()` cwd-vs-package-relative test design flaw (DECISIONS.md 2026-07-22). Fix: monkeypatch `_dist_dir`. Still open, not urgent, unrelated to Phases 8/9.
 - Top-nav search input wired to DOM but not connected to FileTree filter (parked)
 - DependenciesTab shares fgRef across conditionally-rendered tabs (low risk)
-- Windows: use `python -m corpus.cli serve` if `Scripts/` isn't on PATH
-- Dead code with stale Sahara colors: CommandPalette.jsx, Minimap.jsx, ImportanceFilter.jsx (unrendered — parking lot)
+- Dead code with stale Sahara colors: CommandPalette.jsx, Minimap.jsx, ImportanceFilter.jsx (unrendered, parking lot)
+- `curateFiles` in `graphCuration.js` uses O(n) `Array.includes()` instead of a Set lookup in its expansion loop — fine at current scale, parking lot for large repos
+- `ModeToggle` segment padding (`6px 14px`) never measured against the design spec's own 32px-height accessibility fallback — low stakes, parking lot
+- Live MCP `corpus_doc()` pulse round-trip: color/draw-path confirmed correct via code + tests across both Phase 8 and 9, but an actual live MCP client call triggering a real pulse was never observed in-browser this session (no MCP client available to either builder/qa or the orchestrator) — worth a real end-to-end check next time Claude Code is used against this repo with the MCP server registered.
+- Node/npm not on default shell PATH on this machine — see "How to run" above for the workaround.
 
 ## Phase completion checklist
 
-- [x] Phases 1a–5 (M1–M5: CLI, graph, docs, incremental, MCP, viewer, live wire)
-- [x] Phase 6 — Obsidian-style frontend rework
-- [x] Phase 7 — Sahara theme + three-column layout + five tabs
-- [x] Phase 8 — GitHub dark theme retrofit (DONE 2026-07-22 — reviewer APPROVE, qa 152/152, browser-verified)
-- [ ] Phase 9 — Graph UX overhaul: Overview/All-Files modes, label decluttering, layout physics + symbols shape fix (**SCOPED + APPROVED, ZERO CODE WRITTEN** — safe to launch `builder` immediately, no re-scoping or re-approval needed)
+- [x] Phases 1a–7 (M1–M5, Obsidian rework, Sahara theme + 3-column layout)
+- [x] Phase 8 — GitHub dark theme retrofit
+- [x] Phase 9 — Graph UX overhaul (Overview/All-Files modes, label decluttering, physics, symbols fix)
 
-## Next action (exact resume steps)
+## Next action
 
-1. Confirm this machine's working tree still matches the Phase 8 diff described above (`git status` — expect the same 14 modified + 2 untracked files; if it doesn't match, the hand-off didn't transfer cleanly).
-2. Delegate straight to `builder` with: PLAN.md's Phase 9 section + `.claude/memory/phase9_design_spec.md` as the spec (both are complete, do not need re-reading by architect/designer — that work is done). The previous prompt used for this launch is reconstructable from PLAN.md deliverables 1–9 directly; nothing was lost by the crash since the builder agent never started reading.
-3. After builder reports: `reviewer` → `qa` (baseline to protect: 152/152 green) → close out Phase 8... (already done) → close out Phase 9, update this file, report to user with before/after graph screenshots (browser-verify visually — this whole phase exists because "the graph looks bad" isn't catchable by unit tests alone).
+Nothing blocking. Parking lot in PLAN.md has remaining ideas if the user wants a new phase (per-node changelog, `corpus explain`, health overlays, the `test_phase4.py` fix, the O(n) curation scan, etc.). Otherwise the app is in a good, fully-reviewed, fully-tested, committed-and-pushed state.

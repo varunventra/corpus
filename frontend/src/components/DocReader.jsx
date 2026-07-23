@@ -227,22 +227,31 @@ export function DocReader({ node, isOpen, onClose, nodes, edges, staleMap, onNod
             <div style={{ padding: '0 24px', marginTop: 24 }}>
               <h3 style={sectionHeadingStyle}>Key Symbols</h3>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-                {node.symbols.map(sym => (
-                  <div key={sym.name} style={{ padding: '14px 16px', background: 'var(--color-surface)', borderRadius: 8, border: '1px solid var(--color-border)' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: sym.description ? 6 : 0 }}>
-                      <span style={{
-                        background: sym.kind?.toUpperCase() === 'CLASS' ? 'var(--color-accent-dim)' : 'rgba(125,133,144,0.08)',
-                        color: sym.kind?.toUpperCase() === 'CLASS' ? 'var(--color-accent)' : 'var(--color-text-secondary)',
-                        fontFamily: 'var(--font-body)', fontSize: 10, fontWeight: 700,
-                        padding: '2px 8px', borderRadius: 4, textTransform: 'uppercase', letterSpacing: '0.06em',
-                      }}>{sym.kind || 'SYMBOL'}</span>
-                      <span style={{ fontFamily: 'var(--font-body)', fontSize: 13, fontWeight: 700, color: 'var(--color-text-primary)' }}>{sym.name}</span>
+                {node.symbols.map((sym, i) => {
+                  // graph.json stores symbols as plain strings; older/richer
+                  // shapes may provide { name, kind, description } objects.
+                  // Tolerate both (Phase 9 deliverable 9).
+                  const isString = typeof sym === 'string'
+                  const symName = isString ? sym : sym.name
+                  const symKind = isString ? null : sym.kind
+                  const symDescription = isString ? null : sym.description
+                  return (
+                    <div key={`${symName}-${i}`} style={{ padding: '14px 16px', background: 'var(--color-surface)', borderRadius: 8, border: '1px solid var(--color-border)' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: symDescription ? 6 : 0 }}>
+                        <span style={{
+                          background: symKind?.toUpperCase() === 'CLASS' ? 'var(--color-accent-dim)' : 'rgba(125,133,144,0.08)',
+                          color: symKind?.toUpperCase() === 'CLASS' ? 'var(--color-accent)' : 'var(--color-text-secondary)',
+                          fontFamily: 'var(--font-body)', fontSize: 10, fontWeight: 700,
+                          padding: '2px 8px', borderRadius: 4, textTransform: 'uppercase', letterSpacing: '0.06em',
+                        }}>{symKind || 'SYMBOL'}</span>
+                        <span style={{ fontFamily: 'var(--font-body)', fontSize: 13, fontWeight: 700, color: 'var(--color-text-primary)' }}>{symName}</span>
+                      </div>
+                      {symDescription && (
+                        <p style={{ fontFamily: 'var(--font-body)', fontSize: 13, color: 'var(--color-text-secondary)', margin: 0, lineHeight: 1.6 }}>{symDescription}</p>
+                      )}
                     </div>
-                    {sym.description && (
-                      <p style={{ fontFamily: 'var(--font-body)', fontSize: 13, color: 'var(--color-text-secondary)', margin: 0, lineHeight: 1.6 }}>{sym.description}</p>
-                    )}
-                  </div>
-                ))}
+                  )
+                })}
               </div>
             </div>
           )}

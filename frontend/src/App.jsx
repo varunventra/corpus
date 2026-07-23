@@ -337,6 +337,8 @@ export default function App() {
           {activeTab === 'explorer' && (
             <ExplorerTab
               graphData={graphData}
+              nodes={nodes}
+              edges={edges}
               staleMap={staleMap}
               collapsedMap={collapsedMap}
               selectedNodeId={selectedNode?.id ?? null}

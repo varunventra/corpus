@@ -375,10 +375,37 @@ describe('Check 13 — No aria-modal in CommandPalette', () => {
 // ---------------------------------------------------------------------------
 
 describe('Additional spec checks', () => {
-  it('GraphCanvas label threshold is 0.15 (not 0.2)', () => {
+  // Phase 9 replaced the Phase 6 inline per-node zoom check
+  // (`globalScale >= 0.15`, evaluated inside nodeCanvasObject) with a
+  // dedicated collision-avoidance label pass run once per frame via
+  // ForceGraph2D's onRenderFramePost callback, gated on a named constant
+  // (LABEL_MIN_ZOOM = 0.6) rather than an inline literal at the draw call
+  // site. This test locks the new threshold value/location instead of the
+  // old one — see STATE.md's "Reviewer's Phase 9 findings" for context.
+  it('GraphCanvas label zoom threshold is the named constant LABEL_MIN_ZOOM = 0.6', () => {
     const gc = src('components/GraphCanvas.jsx')
-    expect(gc).toContain('globalScale >= 0.15')
+    expect(gc).toContain('LABEL_MIN_ZOOM = 0.6')
+    expect(gc).not.toContain('globalScale >= 0.15')
     expect(gc).not.toContain('globalScale >= 0.2')
+  })
+
+  it('GraphCanvas draws labels via onRenderFramePost, not inline in nodeCanvasObject', () => {
+    const gc = src('components/GraphCanvas.jsx')
+    expect(gc).toContain('onRenderFramePost')
+    expect(gc).toContain('handleRenderFramePost')
+
+    // The nodeCanvasObject callback body (everything between its declaration
+    // and the closing of the useCallback that defines it) should no longer
+    // contain a fillText call for the node label — label drawing happens
+    // exclusively in the frame-post pass now.
+    const startMarker = 'const nodeCanvasObject = useCallback('
+    const start = gc.indexOf(startMarker)
+    expect(start).toBeGreaterThan(-1)
+    const end = gc.indexOf('handleRenderFramePost', start)
+    expect(end).toBeGreaterThan(start)
+    const nodeCanvasObjectBody = gc.slice(start, end)
+    expect(nodeCanvasObjectBody).not.toContain('fillText(label')
+    expect(nodeCanvasObjectBody).not.toContain('fillText(lastName')
   })
 
   it('GraphCanvas edge width is 1 (not 1.5)', () => {

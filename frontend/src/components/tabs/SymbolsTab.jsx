@@ -17,9 +17,14 @@ export function SymbolsTab({ nodes, onNodeSelect }) {
     for (const node of nodes) {
       if (!node.symbols || node.type !== 'file') continue
       for (const sym of node.symbols) {
+        // graph.json stores symbols as plain strings; tolerate the richer
+        // { name, kind, description } object shape too (Phase 9 deliverable 9).
+        const isString = typeof sym === 'string'
+        const symName = isString ? sym : sym.name
+        const symKind = isString ? null : sym.kind
         result.push({
-          name: sym.name,
-          kind: (sym.kind || 'SYMBOL').toUpperCase(),
+          name: symName,
+          kind: (symKind || 'SYMBOL').toUpperCase(),
           filePath: node.path,
           fileName: lastName(node.path),
           nodeId: node.id,

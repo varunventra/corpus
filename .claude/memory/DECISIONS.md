@@ -196,6 +196,14 @@
 
 ---
 
+## 2026-07-23 — Phase 9 implementation: `d3-force-3d` added alongside planned `d3-hierarchy` (undocumented at landing, retroactively confirmed sound)
+**Decision:** `frontend/package.json` gained `d3-force-3d` in addition to the already-planned `d3-hierarchy`, so `GraphCanvas.jsx` could import `forceCollide` directly for the radius-aware collision force. This was not named in the original Phase 9 planning entry above; builder added it silently and only surfaced it in its hand-off report. Reviewer confirmed via `node_modules/force-graph/package.json` that `d3-force-3d` is already a transitive dependency of `force-graph` (the engine `react-force-graph-2d` runs on) — so this is the same simulation engine already running, not a new/incompatible physics system, and the addition is accepted as-is.
+**Why:** `forceCollide` isn't exported by plain `d3-force` in a way compatible with `react-force-graph-2d`'s 3d-capable node objects; `d3-force-3d` is the correct compatible import. Accepting after the fact rather than reverting because reverting would mean re-deriving the same fix.
+**Alternatives rejected:** Reverting and reimplementing collision via a different mechanism (no benefit — this is already the dependency the rest of the simulation runs on).
+**Process note:** Going forward, dependency additions beyond what's locked in a DECISIONS.md entry should be flagged to the orchestrator *before* landing, not disclosed only in the post-hoc build report.
+
+---
+
 ## 2026-07-22 — Phase 8 reviewer MINOR: Open-in-Editor hover-fill opacity 0.08 is a builder judgment call, accepted
 **Decision:** In `DocReader.jsx`, the "Open in Editor" button's hover background became `rgba(68,147,248,0.08)` — the Sahara value was `rgba(...,0.05)` and the Phase 8 token-mapping table specified no literal for this slot (only the border's `0.30`). The `0.08` value is accepted as-is.
 **Why:** Reviewer flagged it as the one unstated deviation in an otherwise fully-documented phase — harmless, chosen for legibility of a hover state on a dark background, but previously lacking a paper trail. This entry is that paper trail.
