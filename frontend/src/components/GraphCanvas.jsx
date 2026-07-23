@@ -1,6 +1,6 @@
 import React, { useCallback, useRef, useState, useEffect, useMemo } from 'react'
 import ForceGraph2D from 'react-force-graph-2d'
-import { forceCollide } from 'd3-force-3d'
+import { forceCollide, forceX, forceY } from 'd3-force-3d'
 import { lastName } from '../utils/path.js'
 import { seedHierarchyPositions } from '../lib/hierarchyLayout.js'
 import { computeDegree, idOf } from '../lib/graphCuration.js'
@@ -143,6 +143,16 @@ export function GraphCanvas({
     if (linkForce) linkForce.distance(70)
 
     fg.d3Force('collide', forceCollide(node => nodeRadius(node) + 6))
+
+    // Weak constant centering pull so disconnected nodes/components (no
+    // edges to be reeled in by the link force) don't drift arbitrarily far
+    // under charge/repulsion alone — they'd otherwise force zoomToFit to
+    // zoom out drastically, shrinking the main connected cluster. Strength
+    // is intentionally small so it doesn't fight or compress the existing
+    // link-driven layout of the main cluster, only nudges isolated nodes
+    // back toward center over a few seconds.
+    fg.d3Force('x', forceX(dims.width / 2).strength(0.02))
+    fg.d3Force('y', forceY(dims.height / 2).strength(0.02))
 
     fg.d3ReheatSimulation()
 

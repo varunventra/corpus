@@ -497,6 +497,12 @@ describe('Structural — GraphCanvas.jsx reviewer fix-pass items', () => {
     expect(gc).toMatch(/forceCollide\(node => nodeRadius\(node\)/)
   })
 
+  it('[bugfix] a weak centering force reels in disconnected nodes/components instead of letting them drift', () => {
+    expect(gc).toContain("import { forceCollide, forceX, forceY } from 'd3-force-3d'")
+    expect(gc).toMatch(/d3Force\('x',\s*forceX\(dims\.width \/ 2\)\.strength\(0\.02\)\)/)
+    expect(gc).toMatch(/d3Force\('y',\s*forceY\(dims\.height \/ 2\)\.strength\(0\.02\)\)/)
+  })
+
   it('directory badge is split into a centered arrow + a separate satellite count circle', () => {
     expect(gc).toContain("fillText('▶'")
     expect(gc).toMatch(/node\.x \+ r \* 0\.72/)
