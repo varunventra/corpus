@@ -5,51 +5,52 @@
 
 ## Where we are
 
-- **Current phase:** ALL PHASES COMPLETE (1a–9). v1 shipped with GitHub-dark theme + reworked Explorer graph UX. Nothing blocking.
-- **Last completed phase:** Phase 9 — Graph UX overhaul (DONE 2026-07-23 — reviewer REQUEST CHANGES → fix pass → orchestrator diff-verified → qa 198/198 → orchestrator browser-verified live, dramatic visual improvement confirmed).
-- **Awaiting:** Nothing blocking. User can explore the app; both Phase 8 and Phase 9 are committed and pushed to `origin/main`.
+- **Current phase:** ALL PHASES COMPLETE (1a–9), plus one post-close-out fix. v1 is in a clean, fully-reviewed, fully-tested, committed-and-pushed state. **Nothing is running, nothing is uncommitted, nothing is blocking.**
+- **Working tree:** clean. `git status --short` returns nothing.
+- **Sync status:** local `main` and `origin/main` are identical at commit `2af9129`. Verified via `git log origin/main --oneline -1` immediately before writing this file.
+- **Awaiting:** Nothing. This is a deliberate stopping point for a machine switch — user is moving to their personal laptop.
+
+## Resume on personal laptop — exact steps
+
+```bash
+git clone https://github.com/varunventra/corpus.git
+cd corpus
+python -m pip install -e .
+cd frontend && npm install && npm run build && cd ..
+python -m corpus.cli init      # first time on this machine only
+python -m corpus.cli update    # populates .corpus/graph.json (not tracked in git, .gitignore'd)
+python -m corpus.cli serve     # opens localhost:7077
+```
+
+Node.js: use whatever's on the new machine's normal PATH (this desktop needed a portable-install workaround because it had no admin rights and no system Node — that workaround is machine-specific, irrelevant on a personal laptop with normal Node access). No `GEMINI_API_KEY`/`GROQ_API_KEY` needed for any of the above to work — docs/importance stay null, graph structure and the Explorer view's degree-based fallback curation both work fine without a key.
+
+## Recent history (git log, newest first) — what to tell a fresh session if asked "what happened last"
+
+1. **`2af9129`** — Fixed disconnected/isolated nodes (files with zero edges, e.g. `README.md`, `LICENSE`; and small disconnected components like `frontend/src`) drifting arbitrarily far from the main graph cluster under the force simulation, which forced the camera to zoom out drastically and made the outliers nearly invisible. Fix: added a weak constant centering force (`forceX`/`forceY`, strength 0.02) in `GraphCanvas.jsx` alongside the existing charge/link/collide forces — reeled in isolated nodes without disturbing the main cluster's link-driven layout. User-reported, diagnosed live in browser (confirmed 10 zero-degree nodes via `/graph` data), fixed by `builder`, diff-verified by orchestrator, then re-confirmed live in browser: all 40 nodes now sit together in one cohesive cluster. Tests 199/199.
+2. **`3b8955c`** — Phase 9: Explorer graph UX overhaul. This was the big one — user's original complaint was "the graph looks cluttered, labels overlap, nodes are clustered instead of spread out, everything shows at once." Delivered: **Overview mode** (default) shows a curated subset (importance-ranked if an LLM key is set, degree-ranked fallback otherwise — this machine has no key, so fallback is what's live); **All Files mode** is an explicit toggle showing everything. Real force-physics retune (radius-aware collision, retuned charge/link distance), a d3-hierarchy folder-keyed layout seed for graphs >60 nodes, and a genuine per-frame label-collision-avoidance pass (nudge → leader line → hide, replacing the old "just stack on top of each other" behavior). Directory child-count badges redesigned (separate arrow + count-circle + hover tooltip, instead of the old overlapping badge the user mistook for "random letters or symbols"). Also folded in a real pre-existing bug fix (not a Phase 9 regression, dates to Phase 7): `graph.json` stores `symbols` as plain strings but `DocReader.jsx`/`SymbolsTab.jsx` expected `{name, kind}` objects, so symbol names rendered blank everywhere — now fixed. Went through a full review cycle: reviewer caught a real MAJOR bug (opening the Doc Reader or an MCP query pulse forced an unwanted camera recenter — traced to `zoomToFit` firing on any object-identity change instead of actual content change) plus 2 minor issues, all fixed and both diff-verified and live-browser-verified by the orchestrator before closing out. Tests: 198/198.
+3. **`c644857`** — Phase 8: GitHub-dark theme retrofit. Wholesale-replaced the "Sahara" warm-light theme with a GitHub-dark palette (`#0d1117` canvas, blue accent, amber stale, green pulse) across all frontend components — a pure CSS/token/value pass, reviewer-confirmed zero structural/JSX changes. Tests: 152/152 (suite made fully green for the first time this session — 17 stale theme-lock assertions from the Sahara/Obsidian eras retargeted).
+
+Full reasoning, alternatives-rejected, and judgment calls for all of the above are in `.claude/memory/DECISIONS.md` (append-only, dated entries) and `.claude/memory/PLAN.md` (Phase 8 and Phase 9 sections have complete acceptance criteria and file-touch lists, both checked `[x]`).
 
 ## Project identity
 
 **Corpus** — CLI + MCP server + live graph viewer that generates and maintains a living second representation of a codebase. Plain files in `.corpus/`. Python engine, React frontend. Local only, free-tier AI.
 
-## How to run
+## Known issues & hacks (all pre-existing, none introduced by recent work, none urgent)
 
-```bash
-cd C:\Users\VarunV\Desktop\corpus
-python -m pip install -e .
-cd frontend && npm install && npm run build && cd ..
-python -m corpus.cli update    # regenerates .corpus/graph.json if stale
-python -m corpus.cli serve     # localhost:7077
-```
-
-Node.js is a portable install at `C:\Users\VarunV\tools\node-v24.18.0-win-x64`, prefix to PATH if `node`/`npm` aren't found in a fresh shell: `export PATH="/c/Users/VarunV/tools/node-v24.18.0-win-x64:$PATH"` (bash) — this machine has no admin rights and no system Node. No `GEMINI_API_KEY`/`GROQ_API_KEY` set — docs/importance are null; graph structure and the Overview mode's degree-based fallback curation both work fine regardless.
-
-## What just happened (2026-07-22 → 2026-07-23, one long session across a usage-limit interruption)
-
-- **Phase 8 (GitHub-dark theme retrofit):** complete, reviewed, 152/152 tests, browser-verified, **committed and pushed** at `c644857`.
-- **Phase 9 (Graph UX overhaul):** the user's core complaint — the Explorer graph was cluttered, labels overlapped illegibly, nodes clustered instead of spreading, everything showed at once with no high-level view — is fixed. Full cycle: `builder` implemented Overview/All-Files modes + curation algorithm + physics retune + label AABB-collision pass + hierarchy-seeded layout + directory badge redesign + a folded-in fix for a pre-existing symbols-rendering bug (graph.json stores symbols as plain strings, DocReader/SymbolsTab expected objects — real names were blank everywhere since Phase 7). `reviewer` found one real MAJOR bug (opening the Doc Reader or an MCP pulse forced an unwanted camera recenter — traced to the zoomToFit effect keying on raw object identity instead of actual content change) plus 2 minor issues (unpopulated degree field made label-priority a no-op on this exact no-API-key machine; pulse-revealed nodes didn't visually expand their ancestor folder). A second `builder` pass fixed all three with a content-fingerprint gate + degree wiring + ancestor-expand override. Orchestrator personally verified the fix diff line-by-line (not just trusted the report), then `qa` retargeted the one stale pre-existing test, added 45 new unit tests (198/198 total), and orchestrator did a live browser pass: **confirmed dramatic visual improvement** — Overview mode defaults to a curated 27-31-of-68 subset, All Files mode shows all nodes spread out with zero overlapping circles or labels (a night-and-day difference from the original bug screenshot), directory badges are legible (arrow + separate count circle), the MAJOR camera-jump bug is confirmed fixed (clicking a node to open Doc Reader no longer recenters), and the symbols fix confirmed live (Key Symbols cards show real names like `main`/`init`/`_post_graph_event` instead of blank rows).
-- **Committed and pushed** in one commit alongside Phase 8's already-pushed work (see git log for exact hash — this file doesn't hardcode it since it's written before the final commit of this session).
-- **Session note:** this work spanned a hard interruption (host hit a monthly API spend limit mid-Phase-9-build) and a user-initiated pause/handoff for a possible machine switch; both resolved cleanly with no lost work — STATE.md was kept current throughout specifically so an interrupted session could resume cold.
-- **Cleanup note:** two stray garbage files (`scs` and a long filename containing a sentence fragment) were found as untracked debris at close-out — traced to a subagent's `git diff` invoking the `less` pager interactively in a non-interactive shell and mangling output into files. Deleted before committing; not source content, not user data.
-
-## Known issues & hacks
-
-- **`tests/test_phase4.py::TestAC5StaticFileServing`** — 4 Python tests, pre-existing `_dist_dir()` cwd-vs-package-relative test design flaw (DECISIONS.md 2026-07-22). Fix: monkeypatch `_dist_dir`. Still open, not urgent, unrelated to Phases 8/9.
-- Top-nav search input wired to DOM but not connected to FileTree filter (parked)
-- DependenciesTab shares fgRef across conditionally-rendered tabs (low risk)
-- Dead code with stale Sahara colors: CommandPalette.jsx, Minimap.jsx, ImportanceFilter.jsx (unrendered, parking lot)
-- `curateFiles` in `graphCuration.js` uses O(n) `Array.includes()` instead of a Set lookup in its expansion loop — fine at current scale, parking lot for large repos
-- `ModeToggle` segment padding (`6px 14px`) never measured against the design spec's own 32px-height accessibility fallback — low stakes, parking lot
-- Live MCP `corpus_doc()` pulse round-trip: color/draw-path confirmed correct via code + tests across both Phase 8 and 9, but an actual live MCP client call triggering a real pulse was never observed in-browser this session (no MCP client available to either builder/qa or the orchestrator) — worth a real end-to-end check next time Claude Code is used against this repo with the MCP server registered.
-- Node/npm not on default shell PATH on this machine — see "How to run" above for the workaround.
+- **`tests/test_phase4.py::TestAC5StaticFileServing`** — 4 Python tests, pre-existing `_dist_dir()` cwd-vs-package-relative test design flaw (see DECISIONS.md 2026-07-22). Fix: monkeypatch `_dist_dir` in the test. Still open.
+- Top-nav search input wired to DOM but not connected to FileTree filter (parked, PLAN.md parking lot).
+- Dead code carrying stale Sahara-era colors: `CommandPalette.jsx`, `Minimap.jsx`, `ImportanceFilter.jsx` — none are imported/rendered anywhere, zero visual impact, parked.
+- `curateFiles` in `graphCuration.js` uses an O(n) array scan instead of a Set lookup in its expansion loop — fine at current repo scale, will matter on very large repos, parked.
+- Live MCP `corpus_doc()` pulse round-trip: color and draw-path are confirmed correct via code + tests across Phase 8 and 9, but an actual live MCP client call (from a real Claude Code session with the MCP server registered) triggering a real pulse was never observed end-to-end in-browser — everything short of that final wire has been verified. Worth doing once, low priority.
 
 ## Phase completion checklist
 
-- [x] Phases 1a–7 (M1–M5, Obsidian rework, Sahara theme + 3-column layout)
+- [x] Phases 1a–7 (M1–M5, Obsidian rework, Sahara theme + 3-column layout — see PLAN.md for full detail)
 - [x] Phase 8 — GitHub dark theme retrofit
 - [x] Phase 9 — Graph UX overhaul (Overview/All-Files modes, label decluttering, physics, symbols fix)
+- [x] Post-close-out fix — disconnected-node centering force
 
 ## Next action
 
-Nothing blocking. Parking lot in PLAN.md has remaining ideas if the user wants a new phase (per-node changelog, `corpus explain`, health overlays, the `test_phase4.py` fix, the O(n) curation scan, etc.). Otherwise the app is in a good, fully-reviewed, fully-tested, committed-and-pushed state.
+Nothing blocking, nothing in flight. If starting fresh: read this file, then `PLAN.md`'s parking lot section for backlog ideas (per-node changelog, `corpus explain` command, health overlays, the `test_phase4.py` fix, the O(n) curation scan) if the user wants a new phase — otherwise just run the app and use it.
